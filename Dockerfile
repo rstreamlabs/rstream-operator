@@ -5,6 +5,7 @@ FROM --platform=$BUILDPLATFORM golang:1.26.3-alpine AS builder
 
 ARG TARGETOS
 ARG TARGETARCH
+ARG TARGETVARIANT
 
 WORKDIR /workspace
 
@@ -15,8 +16,13 @@ RUN go mod download
 
 COPY . .
 
-RUN CGO_ENABLED=0 GOOS=${TARGETOS:-linux} GOARCH=${TARGETARCH} go build -mod=mod -buildvcs=false -trimpath -ldflags="-s -w" -o /manager ./cmd/manager
-RUN CGO_ENABLED=0 GOOS=${TARGETOS:-linux} GOARCH=${TARGETARCH} go build -mod=mod -buildvcs=false -trimpath -ldflags="-s -w" -o /rstream-agent ./cmd/rstream-agent
+RUN set -eux; \
+    goos="${TARGETOS:-linux}"; \
+    goarch="${TARGETARCH:-$(go env GOARCH)}"; \
+    if [ "${goarch}" = "arm" ] && [ -n "${TARGETVARIANT:-}" ]; then export GOARM="${TARGETVARIANT#v}"; fi; \
+    if [ "${goarch}" = "amd64" ] && [ -n "${TARGETVARIANT:-}" ]; then export GOAMD64="${TARGETVARIANT}"; fi; \
+    CGO_ENABLED=0 GOOS="${goos}" GOARCH="${goarch}" go build -mod=mod -buildvcs=false -trimpath -ldflags="-s -w" -o /manager ./cmd/manager; \
+    CGO_ENABLED=0 GOOS="${goos}" GOARCH="${goarch}" go build -mod=mod -buildvcs=false -trimpath -ldflags="-s -w" -o /rstream-agent ./cmd/rstream-agent
 
 FROM alpine:3.22
 
