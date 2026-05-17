@@ -1,0 +1,8 @@
+# Changelog
+
+## [0.2.0](https://github.com/rstreamlabs/rstream-operator/compare/v0.1.0...v0.2.0) (2026-05-17)
+
+
+### Features
+
+* add rstream operator ([39837e1](https://github.com/rstreamlabs/rstream-operator/commit/39837e144d5223f5ae6c845ef8316d30db99c9cc))
