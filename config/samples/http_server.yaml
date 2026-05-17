@@ -1,0 +1,42 @@
+# See LICENSE file in the project root for license information.
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: rstream-demo
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: http-server
+  namespace: rstream-demo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: http-server
+  template:
+    metadata:
+      labels:
+        app: http-server
+    spec:
+      containers:
+        - name: http-server
+          image: python:3.12-alpine
+          command: ["python", "-m", "http.server", "8080", "--bind", "0.0.0.0"]
+          ports:
+            - containerPort: 8080
+              name: http
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: http-server
+  namespace: rstream-demo
+spec:
+  selector:
+    app: http-server
+  ports:
+    - name: http
+      port: 8080
+      targetPort: 8080

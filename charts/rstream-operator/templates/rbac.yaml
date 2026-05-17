@@ -1,0 +1,80 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "rstream-operator.fullname" . }}-manager-role
+  labels:
+    {{- include "rstream-operator.labels" . | nindent 4 }}
+rules:
+  - apiGroups: [""]
+    resources: ["configmaps", "secrets", "serviceaccounts", "services"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["configmaps", "serviceaccounts"]
+    verbs: ["create", "delete", "patch", "update"]
+  - apiGroups: ["apps"]
+    resources: ["deployments"]
+    verbs: ["get", "list", "watch", "create", "delete", "patch", "update"]
+  - apiGroups: ["rbac.authorization.k8s.io"]
+    resources: ["roles", "rolebindings"]
+    verbs: ["get", "list", "watch", "create", "delete", "patch", "update"]
+  - apiGroups: ["tunnels.rstream.io"]
+    resources: ["rstreamconnections"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["tunnels.rstream.io"]
+    resources: ["rstreamconnections/status"]
+    verbs: ["get", "patch", "update"]
+  - apiGroups: ["tunnels.rstream.io"]
+    resources: ["rstreamtunnels"]
+    verbs: ["get", "list", "watch", "patch", "update"]
+  - apiGroups: ["tunnels.rstream.io"]
+    resources: ["rstreamtunnels/finalizers"]
+    verbs: ["update"]
+  - apiGroups: ["tunnels.rstream.io"]
+    resources: ["rstreamtunnels/status"]
+    verbs: ["get", "patch", "update"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ include "rstream-operator.fullname" . }}-manager-rolebinding
+  labels:
+    {{- include "rstream-operator.labels" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ include "rstream-operator.fullname" . }}-manager-role
+subjects:
+  - kind: ServiceAccount
+    name: {{ include "rstream-operator.fullname" . }}
+    namespace: {{ .Release.Namespace }}
+{{- if .Values.leaderElection.enabled }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ include "rstream-operator.fullname" . }}-leader-election-role
+  labels:
+    {{- include "rstream-operator.labels" . | nindent 4 }}
+rules:
+  - apiGroups: ["coordination.k8s.io"]
+    resources: ["leases"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  - apiGroups: [""]
+    resources: ["events"]
+    verbs: ["create", "patch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ include "rstream-operator.fullname" . }}-leader-election-rolebinding
+  labels:
+    {{- include "rstream-operator.labels" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: {{ include "rstream-operator.fullname" . }}-leader-election-role
+subjects:
+  - kind: ServiceAccount
+    name: {{ include "rstream-operator.fullname" . }}
+    namespace: {{ .Release.Namespace }}
+{{- end }}

@@ -1,0 +1,352 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.21.0
+  name: rstreamconnections.tunnels.rstream.io
+spec:
+  group: tunnels.rstream.io
+  names:
+    categories:
+    - rstream
+    kind: RstreamConnection
+    listKind: RstreamConnectionList
+    plural: rstreamconnections
+    shortNames:
+    - rconn
+    singular: rstreamconnection
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .status.projectEndpoint
+      name: Project
+      type: string
+    - jsonPath: .status.engine
+      name: Engine
+      type: string
+    - jsonPath: .status.conditions[?(@.type=="Ready")].status
+      name: Ready
+      type: string
+    - jsonPath: .metadata.creationTimestamp
+      name: Age
+      type: date
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: RstreamConnection provides shared rstream connection settings
+          for RstreamTunnel resources.
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: RstreamConnectionSpec defines shared rstream connection settings.
+            properties:
+              apiURL:
+                default: https://rstream.io
+                description: APIURL is the rstream Control plane URL used for project
+                  resolution.
+                minLength: 1
+                type: string
+              engine:
+                description: Engine is the rstream engine address, for example engine.rstream.io:443.
+                  Use this for self-hosted deployments without a Control plane.
+                minLength: 1
+                type: string
+              mtls:
+                description: MTLS configures client certificate authentication for
+                  tunnel agents.
+                properties:
+                  caSecretRef:
+                    description: CASecretRef optionally references a PEM CA bundle
+                      for the engine TLS connection.
+                    properties:
+                      key:
+                        description: Key is the key within the Secret data map.
+                        minLength: 1
+                        type: string
+                      name:
+                        description: Name is the Secret name.
+                        minLength: 1
+                        type: string
+                    required:
+                    - key
+                    - name
+                    type: object
+                  certSecretRef:
+                    description: CertSecretRef references the PEM client certificate.
+                    properties:
+                      key:
+                        description: Key is the key within the Secret data map.
+                        minLength: 1
+                        type: string
+                      name:
+                        description: Name is the Secret name.
+                        minLength: 1
+                        type: string
+                    required:
+                    - key
+                    - name
+                    type: object
+                  keySecretRef:
+                    description: KeySecretRef references the PEM client private key.
+                    properties:
+                      key:
+                        description: Key is the key within the Secret data map.
+                        minLength: 1
+                        type: string
+                      name:
+                        description: Name is the Secret name.
+                        minLength: 1
+                        type: string
+                    required:
+                    - key
+                    - name
+                    type: object
+                required:
+                - certSecretRef
+                - keySecretRef
+                type: object
+              projectEndpoint:
+                description: ProjectEndpoint identifies the rstream project to resolve
+                  through the Control plane. This is the preferred hosted rstream
+                  path.
+                minLength: 1
+                type: string
+              projectID:
+                description: ProjectID identifies the rstream project to resolve through
+                  the Control plane when the endpoint is not known.
+                minLength: 1
+                type: string
+              tokenSecretRef:
+                description: TokenSecretRef references the bearer token used by tunnel
+                  agents.
+                properties:
+                  key:
+                    description: Key is the key within the Secret data map.
+                    minLength: 1
+                    type: string
+                  name:
+                    description: Name is the Secret name.
+                    minLength: 1
+                    type: string
+                required:
+                - key
+                - name
+                type: object
+              transport:
+                description: Transport configures the agent-to-engine network path.
+                properties:
+                  bind:
+                    description: Bind controls the local bind address or interface
+                      used by the agent.
+                    properties:
+                      address:
+                        description: Address is the local source address when mode
+                          is address.
+                        type: string
+                      interface:
+                        description: Interface is the network interface name when
+                          mode is interface.
+                        type: string
+                      mode:
+                        default: address
+                        description: Mode selects address or interface binding.
+                        enum:
+                        - address
+                        - interface
+                        type: string
+                    type: object
+                  dns:
+                    description: DNS configures custom engine DNS resolution.
+                    properties:
+                      dnssec:
+                        description: DNSSEC enables DNSSEC validation where supported.
+                        type: boolean
+                      override:
+                        description: Override is the DNS server address to use for
+                          engine lookups.
+                        type: string
+                      serverName:
+                        description: ServerName is the DNS-over-TLS server name.
+                        type: string
+                      tls:
+                        description: TLS enables DNS-over-TLS for the override resolver.
+                        type: boolean
+                    type: object
+                  ipFamily:
+                    default: auto
+                    description: IPFamily forces IPv4 or IPv6. auto leaves selection
+                      to the host network stack.
+                    enum:
+                    - auto
+                    - ipv4
+                    - ipv6
+                    type: string
+                  mptcp:
+                    description: MPTCP enables Multipath TCP when supported by the
+                      node kernel.
+                    type: boolean
+                  proxy:
+                    description: Proxy configures an HTTP proxy for TLS engine transport.
+                    properties:
+                      headers:
+                        additionalProperties:
+                          type: string
+                        description: Headers are additional HTTP headers sent to the
+                          proxy.
+                        type: object
+                      http:
+                        description: HTTP is the proxy URL.
+                        type: string
+                      passwordSecretRef:
+                        description: PasswordSecretRef references the proxy password.
+                        properties:
+                          key:
+                            description: Key is the key within the Secret data map.
+                            minLength: 1
+                            type: string
+                          name:
+                            description: Name is the Secret name.
+                            minLength: 1
+                            type: string
+                        required:
+                        - key
+                        - name
+                        type: object
+                      usernameSecretRef:
+                        description: UsernameSecretRef references the proxy username.
+                        properties:
+                          key:
+                            description: Key is the key within the Secret data map.
+                            minLength: 1
+                            type: string
+                          name:
+                            description: Name is the Secret name.
+                            minLength: 1
+                            type: string
+                        required:
+                        - key
+                        - name
+                        type: object
+                    type: object
+                  useQuic:
+                    description: UseQUIC uses QUIC for the agent-to-engine transport.
+                    type: boolean
+                type: object
+            type: object
+            x-kubernetes-validations:
+            - message: exactly one of tokenSecretRef or mtls must be set
+              rule: has(self.tokenSecretRef) != has(self.mtls)
+            - message: exactly one of projectEndpoint, projectID, or engine must be
+                set
+              rule: '(has(self.projectEndpoint) ? 1 : 0) + (has(self.projectID) ?
+                1 : 0) + (has(self.engine) ? 1 : 0) == 1'
+            - message: projectEndpoint and projectID require tokenSecretRef
+              rule: has(self.engine) || has(self.tokenSecretRef)
+          status:
+            description: RstreamConnectionStatus defines the observed state of RstreamConnection.
+            properties:
+              apiURL:
+                description: APIURL is the Control plane URL used for the last successful
+                  resolution.
+                type: string
+              conditions:
+                description: Conditions describe the current connection configuration
+                  state.
+                items:
+                  description: Condition contains details for one aspect of the current
+                    state of this API Resource.
+                  properties:
+                    lastTransitionTime:
+                      description: |-
+                        lastTransitionTime is the last time the condition transitioned from one status to another.
+                        This should be when the underlying condition changed.  If that is not known, then using the time when the API field changed is acceptable.
+                      format: date-time
+                      type: string
+                    message:
+                      description: |-
+                        message is a human readable message indicating details about the transition.
+                        This may be an empty string.
+                      maxLength: 32768
+                      type: string
+                    observedGeneration:
+                      description: |-
+                        observedGeneration represents the .metadata.generation that the condition was set based upon.
+                        For instance, if .metadata.generation is currently 12, but the .status.conditions[x].observedGeneration is 9, the condition is out of date
+                        with respect to the current state of the instance.
+                      format: int64
+                      minimum: 0
+                      type: integer
+                    reason:
+                      description: |-
+                        reason contains a programmatic identifier indicating the reason for the condition's last transition.
+                        Producers of specific condition types may define expected values and meanings for this field,
+                        and whether the values are considered a guaranteed API.
+                        The value should be a CamelCase string.
+                        This field may not be empty.
+                      maxLength: 1024
+                      minLength: 1
+                      pattern: ^[A-Za-z]([A-Za-z0-9_,:]*[A-Za-z0-9_])?$
+                      type: string
+                    status:
+                      description: status of the condition, one of True, False, Unknown.
+                      enum:
+                      - "True"
+                      - "False"
+                      - Unknown
+                      type: string
+                    type:
+                      description: type of condition in CamelCase or in foo.example.com/CamelCase.
+                      maxLength: 316
+                      pattern: ^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$
+                      type: string
+                  required:
+                  - lastTransitionTime
+                  - message
+                  - reason
+                  - status
+                  - type
+                  type: object
+                type: array
+                x-kubernetes-list-map-keys:
+                - type
+                x-kubernetes-list-type: map
+              engine:
+                description: Engine is the resolved engine address used by tunnel
+                  agents.
+                type: string
+              observedGeneration:
+                description: ObservedGeneration is the latest metadata.generation
+                  reconciled by the controller.
+                format: int64
+                type: integer
+              projectEndpoint:
+                description: ProjectEndpoint is the resolved project endpoint when
+                  project lookup is used.
+                type: string
+              projectID:
+                description: ProjectID is the resolved project ID when project lookup
+                  is used.
+                type: string
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}

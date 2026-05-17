@@ -1,0 +1,55 @@
+# See LICENSE file in the project root for license information.
+
+replicaCount: 1
+
+image:
+  repository: rstream/rstream-operator
+  tag: latest
+  pullPolicy: IfNotPresent
+
+agent:
+  image:
+    repository: ""
+    tag: ""
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+leaderElection:
+  enabled: true
+
+metrics:
+  bindAddress: ":8080"
+
+health:
+  bindAddress: ":8081"
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 128Mi
+  limits:
+    memory: 512Mi
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+podAnnotations: {}
+podLabels: {}
+
+securityContext:
+  runAsNonRoot: true
+  seccompProfile:
+    type: RuntimeDefault
+
+containerSecurityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+  readOnlyRootFilesystem: true
+  runAsNonRoot: true
+
+installCRDs: true

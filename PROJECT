@@ -1,0 +1,25 @@
+domain: rstream.io
+layout:
+- go.kubebuilder.io/v4
+projectName: rstream-operator
+repo: github.com/rstreamlabs/rstream-operator
+resources:
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: rstream.io
+  group: tunnels
+  kind: Tunnel
+  path: github.com/rstreamlabs/rstream-operator/api/v1alpha1
+  version: v1alpha1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: rstream.io
+  group: tunnels
+  kind: RstreamConnection
+  path: github.com/rstreamlabs/rstream-operator/api/v1alpha1
+  version: v1alpha1
+version: "3"

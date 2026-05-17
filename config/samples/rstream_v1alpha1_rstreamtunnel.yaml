@@ -1,0 +1,23 @@
+# See LICENSE file in the project root for license information.
+
+apiVersion: tunnels.rstream.io/v1alpha1
+kind: RstreamTunnel
+metadata:
+  name: web
+  namespace: rstream-demo
+spec:
+  connectionRef:
+    name: default
+  target:
+    service:
+      name: http-server
+      port: http
+  publish: true
+  protocol: http
+  labels:
+    app: http-server
+  http:
+    version: http/1.1
+    auth:
+      token: true
+      rstream: true

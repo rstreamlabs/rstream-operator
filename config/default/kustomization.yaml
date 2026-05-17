@@ -1,0 +1,11 @@
+# See LICENSE file in the project root for license information.
+
+resources:
+  - ../crd
+  - ../rbac
+  - ../manager
+
+images:
+  - name: controller
+    newName: rstream/rstream-operator
+    newTag: latest

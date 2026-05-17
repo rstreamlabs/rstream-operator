@@ -1,0 +1,10 @@
+# See LICENSE file in the project root for license information.
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: rstream-system
+  labels:
+    app.kubernetes.io/name: rstream-operator
+    app.kubernetes.io/component: manager
+    app.kubernetes.io/part-of: rstream

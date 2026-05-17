@@ -1,0 +1,5 @@
+# See LICENSE file in the project root for license information.
+
+resources:
+  - bases/tunnels.rstream.io_rstreamconnections.yaml
+  - bases/tunnels.rstream.io_rstreamtunnels.yaml

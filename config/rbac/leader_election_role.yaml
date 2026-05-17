@@ -1,0 +1,31 @@
+# See LICENSE file in the project root for license information.
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: rstream-operator-leader-election-role
+  namespace: rstream-system
+  labels:
+    app.kubernetes.io/name: rstream-operator
+    app.kubernetes.io/component: manager
+    app.kubernetes.io/part-of: rstream
+rules:
+  - apiGroups:
+      - coordination.k8s.io
+    resources:
+      - leases
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+      - update
+      - patch
+      - delete
+  - apiGroups:
+      - ""
+    resources:
+      - events
+    verbs:
+      - create
+      - patch

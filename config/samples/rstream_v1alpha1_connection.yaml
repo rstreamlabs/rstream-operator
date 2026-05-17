@@ -1,0 +1,12 @@
+# See LICENSE file in the project root for license information.
+
+apiVersion: tunnels.rstream.io/v1alpha1
+kind: RstreamConnection
+metadata:
+  name: default
+  namespace: rstream-demo
+spec:
+  projectEndpoint: "<project-endpoint>"
+  tokenSecretRef:
+    name: rstream-credentials
+    key: token

@@ -1,0 +1,9 @@
+# See LICENSE file in the project root for license information.
+
+resources:
+  - namespace.yaml
+  - service_account.yaml
+  - role.yaml
+  - role_binding.yaml
+  - leader_election_role.yaml
+  - leader_election_role_binding.yaml

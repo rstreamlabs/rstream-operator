@@ -1,0 +1,9 @@
+# See LICENSE file in the project root for license information.
+
+resources:
+  - manager.yaml
+
+images:
+  - name: controller
+    newName: rstream/rstream-operator
+    newTag: latest

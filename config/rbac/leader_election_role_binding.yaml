@@ -1,0 +1,19 @@
+# See LICENSE file in the project root for license information.
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: rstream-operator-leader-election-rolebinding
+  namespace: rstream-system
+  labels:
+    app.kubernetes.io/name: rstream-operator
+    app.kubernetes.io/component: manager
+    app.kubernetes.io/part-of: rstream
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: rstream-operator-leader-election-role
+subjects:
+  - kind: ServiceAccount
+    name: rstream-operator-controller-manager
+    namespace: rstream-system

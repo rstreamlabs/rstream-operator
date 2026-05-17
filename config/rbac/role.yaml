@@ -1,0 +1,86 @@
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: manager-role
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - serviceaccounts
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - secrets
+  - services
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - rbac.authorization.k8s.io
+  resources:
+  - rolebindings
+  - roles
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - tunnels.rstream.io
+  resources:
+  - rstreamconnections
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - tunnels.rstream.io
+  resources:
+  - rstreamconnections/status
+  - rstreamtunnels/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - tunnels.rstream.io
+  resources:
+  - rstreamtunnels
+  verbs:
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - tunnels.rstream.io
+  resources:
+  - rstreamtunnels/finalizers
+  verbs:
+  - update
