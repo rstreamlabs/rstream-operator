@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.2](https://github.com/rstreamlabs/rstream-operator/compare/v0.2.1...v0.2.2) (2026-05-24)
+
+
+### Bug Fixes
+
+* **deps:** update rstream Go SDK to 1.17.1 ([6a9edfb](https://github.com/rstreamlabs/rstream-operator/commit/6a9edfba46bdbf715e5c51263cad955960c97a06))
+
 ## [0.2.1](https://github.com/rstreamlabs/rstream-operator/compare/v0.2.0...v0.2.1) (2026-05-17)
 
 
