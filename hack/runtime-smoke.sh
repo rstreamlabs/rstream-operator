@@ -41,6 +41,8 @@ build_image() {
       --exclude dist \
       --exclude out \
       --exclude coverage.out \
+      --exclude go.work \
+      --exclude go.work.sum \
       "${ROOT_DIR}/" "${SMOKE_TMP_DIR}/rstream-operator/"
     rsync -a --delete \
       --exclude .git \
