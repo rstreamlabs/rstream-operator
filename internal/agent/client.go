@@ -28,11 +28,15 @@ func NewRstreamClient(cfg agentconfig.Config) (*rstream.Client, error) {
 	if token != "" && tlsConfig != nil {
 		return nil, fmt.Errorf("%s and mTLS authentication cannot be used together", tokenEnv)
 	}
+	transport, err := transport(cfg.Connection.Transport)
+	if err != nil {
+		return nil, err
+	}
 	return rstream.NewClient(rstream.ClientOptions{
 		Engine:          cfg.Connection.Engine,
 		Token:           token,
 		TLSClientConfig: tlsConfig,
-		Transport:       transport(cfg.Connection.Transport),
+		Transport:       transport,
 	})
 }
 
@@ -62,11 +66,12 @@ func tlsConfig(cfg *agentconfig.MTLSConfig) (*tls.Config, error) {
 	return out, nil
 }
 
-func transport(cfg *agentconfig.TransportConfig) rstream.Dialer {
+func transport(cfg *agentconfig.TransportConfig) (rstream.Dialer, error) {
 	if cfg == nil {
-		return nil
+		return nil, nil
 	}
 	converted := &rstreamconfig.TransportConfig{
+		Mode:     strings.TrimSpace(cfg.Mode),
 		IPFamily: strings.TrimSpace(cfg.IPFamily),
 		MPTCP:    cfg.MPTCP,
 		UseQUIC:  cfg.UseQUIC,
@@ -101,5 +106,9 @@ func transport(cfg *agentconfig.TransportConfig) rstream.Dialer {
 			converted.Proxy.Password = os.Getenv(cfg.Proxy.PasswordEnv)
 		}
 	}
-	return rstreamconfig.FlattenTransport(converted)
+	resolved, err := rstreamconfig.FlattenTransportWithError(converted)
+	if err != nil {
+		return nil, fmt.Errorf("resolve tunnel transport: %w", err)
+	}
+	return resolved, nil
 }

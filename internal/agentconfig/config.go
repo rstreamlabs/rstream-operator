@@ -24,6 +24,7 @@ type MTLSConfig struct {
 }
 
 type TransportConfig struct {
+	Mode     string       `yaml:"mode,omitempty"`
 	Bind     *BindConfig  `yaml:"bind,omitempty"`
 	IPFamily string       `yaml:"ipFamily,omitempty"`
 	DNS      *DNSConfig   `yaml:"dns,omitempty"`
@@ -53,17 +54,18 @@ type ProxyConfig struct {
 }
 
 type TunnelConfig struct {
-	Name        string            `yaml:"name"`
-	Publish     *bool             `yaml:"publish,omitempty"`
-	Protocol    string            `yaml:"protocol,omitempty"`
-	Type        string            `yaml:"type,omitempty"`
-	Hostname    string            `yaml:"hostname,omitempty"`
-	Labels      map[string]string `yaml:"labels,omitempty"`
-	UpstreamTLS *bool             `yaml:"upstreamTLS,omitempty"`
-	TrustedIPs  []string          `yaml:"trustedIPs,omitempty"`
-	GeoIP       []string          `yaml:"geoip,omitempty"`
-	HTTP        *HTTPConfig       `yaml:"http,omitempty"`
-	TLS         *TLSConfig        `yaml:"tls,omitempty"`
+	Name                       string            `yaml:"name"`
+	Publish                    *bool             `yaml:"publish,omitempty"`
+	Protocol                   string            `yaml:"protocol,omitempty"`
+	Type                       string            `yaml:"type,omitempty"`
+	DatagramGuaranteedDelivery *bool             `yaml:"datagramGuaranteedDelivery,omitempty"`
+	Hostname                   string            `yaml:"hostname,omitempty"`
+	Labels                     map[string]string `yaml:"labels,omitempty"`
+	UpstreamTLS                *bool             `yaml:"upstreamTLS,omitempty"`
+	TrustedIPs                 []string          `yaml:"trustedIPs,omitempty"`
+	GeoIP                      []string          `yaml:"geoip,omitempty"`
+	HTTP                       *HTTPConfig       `yaml:"http,omitempty"`
+	TLS                        *TLSConfig        `yaml:"tls,omitempty"`
 }
 
 type HTTPConfig struct {

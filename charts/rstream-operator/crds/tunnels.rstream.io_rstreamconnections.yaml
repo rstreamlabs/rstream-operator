@@ -198,6 +198,15 @@ spec:
                     - ipv4
                     - ipv6
                     type: string
+                  mode:
+                    description: |-
+                      Mode selects auto, TLS, or QUIC for the agent-to-engine transport. When
+                      omitted, auto is used unless the legacy useQuic field is present.
+                    enum:
+                    - auto
+                    - tls
+                    - quic
+                    type: string
                   mptcp:
                     description: MPTCP enables Multipath TCP when supported by the
                       node kernel.
@@ -246,7 +255,9 @@ spec:
                         type: object
                     type: object
                   useQuic:
-                    description: UseQUIC uses QUIC for the agent-to-engine transport.
+                    description: |-
+                      UseQUIC is the legacy transport selector. Prefer Mode.
+                      Deprecated: use Mode instead.
                     type: boolean
                 type: object
             type: object

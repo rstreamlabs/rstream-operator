@@ -414,6 +414,11 @@ func (in *RstreamTunnelSpec) DeepCopyInto(out *RstreamTunnelSpec) {
 		*out = new(bool)
 		**out = **in
 	}
+	if in.DatagramGuaranteedDelivery != nil {
+		in, out := &in.DatagramGuaranteedDelivery, &out.DatagramGuaranteedDelivery
+		*out = new(bool)
+		**out = **in
+	}
 	if in.Labels != nil {
 		in, out := &in.Labels, &out.Labels
 		*out = make(map[string]string, len(*in))

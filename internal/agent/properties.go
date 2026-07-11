@@ -34,6 +34,12 @@ func TunnelProperties(cfg agentconfig.TunnelConfig) (rstream.TunnelProperties, e
 		}
 		props.Protocol = &val
 	}
+	if cfg.DatagramGuaranteedDelivery != nil {
+		if *cfg.DatagramGuaranteedDelivery && props.Type != nil && *props.Type != rstream.TunnelTypeDatagram {
+			return props, fmt.Errorf("datagram guaranteed delivery requires tunnel type %q", rstream.TunnelTypeDatagram)
+		}
+		props.DatagramGuaranteedDelivery = cfg.DatagramGuaranteedDelivery
+	}
 	if strings.TrimSpace(cfg.Hostname) != "" {
 		hostname := strings.TrimSpace(cfg.Hostname)
 		props.Hostname = &hostname

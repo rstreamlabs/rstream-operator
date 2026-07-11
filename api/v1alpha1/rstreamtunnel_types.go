@@ -30,6 +30,9 @@ type RstreamTunnelSpec struct {
 	// Type controls bytestream or datagram forwarding. When omitted the operator infers it from protocol/http.version.
 	// +optional
 	Type TunnelType `json:"type,omitempty"`
+	// DatagramGuaranteedDelivery requires reliable delivery for datagram tunnels. When omitted or false, datagram tunnels may use an unreliable fast path.
+	// +optional
+	DatagramGuaranteedDelivery *bool `json:"datagramGuaranteedDelivery,omitempty"`
 	// Hostname sets a stable public hostname. When omitted, the operator generates one once and stores it in status.
 	// +optional
 	Hostname string `json:"hostname,omitempty"`

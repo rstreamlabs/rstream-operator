@@ -70,8 +70,8 @@ spec:
 ```yaml
 spec:
   transport:
+    mode: auto
     ipFamily: ipv4
-    useQuic: false
     dns:
       override: 1.1.1.1
       tls: true
@@ -86,7 +86,9 @@ spec:
         key: password
 ```
 
-Use transport settings only when required by the network environment. The default path is usually best.
+`mode` accepts `auto`, `tls`, or `quic`. The default `auto` mode prefers QUIC and falls back to TLS while opening the agent control channel, then keeps the selected transport for that agent client. `useQuic` remains accepted for compatibility with older manifests; do not set both fields in new resources.
+
+Use the other transport settings only when required by the network environment. The default path is usually best.
 
 ## RstreamTunnel
 
@@ -122,6 +124,7 @@ spec:
 | `publish` | no | Publish through the rstream edge. Defaults to `true`. |
 | `protocol` | no | `http`, `tls`, `dtls`, or `quic`. Defaults to `http`. |
 | `type` | no | `bytestream` or `datagram`. Inferred when omitted. |
+| `datagramGuaranteedDelivery` | no | Requires reliable delivery for datagram tunnels. Defaults to `false`. |
 | `hostname` | no | Stable public hostname. Generated and persisted in status when omitted. |
 | `labels` | no | Labels added to the rstream tunnel inventory. |
 | `upstreamTLS` | no | Marks the Kubernetes upstream as TLS-enabled. |
@@ -139,6 +142,8 @@ The operator validates that the Service port protocol matches the tunnel data ty
 - `http` with `h3`: Service port must be UDP.
 - `tls`: Service port must be TCP.
 - `dtls` or `quic`: Service port must be UDP.
+
+Set `datagramGuaranteedDelivery: true` only on datagram tunnels. It disables unreliable datagram fast paths, including QUIC datagrams on the agent-to-engine leg, when packet loss is not acceptable.
 
 ### HTTP
 
