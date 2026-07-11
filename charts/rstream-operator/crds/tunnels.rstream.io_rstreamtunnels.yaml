@@ -1134,6 +1134,11 @@ spec:
                     type: string
                 type: object
                 x-kubernetes-map-type: atomic
+              datagramGuaranteedDelivery:
+                description: DatagramGuaranteedDelivery requires reliable delivery
+                  for datagram tunnels. When omitted or false, datagram tunnels may
+                  use an unreliable fast path.
+                type: boolean
               geoip:
                 description: GeoIP restricts access to the published tunnel by country
                   code.

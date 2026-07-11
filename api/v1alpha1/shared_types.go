@@ -53,6 +53,16 @@ const (
 	IPFamilyIPv6 IPFamily = "ipv6"
 )
 
+// TunnelTransportMode selects the agent-to-engine transport.
+// +kubebuilder:validation:Enum=auto;tls;quic
+type TunnelTransportMode string
+
+const (
+	TunnelTransportModeAuto TunnelTransportMode = "auto"
+	TunnelTransportModeTLS  TunnelTransportMode = "tls"
+	TunnelTransportModeQUIC TunnelTransportMode = "quic"
+)
+
 // SecretKeyRef references a single key in a Secret in the same namespace as the owning resource.
 type SecretKeyRef struct {
 	// Name is the Secret name.
@@ -73,6 +83,10 @@ func (r SecretKeyRef) SecretKeySelector() corev1.SecretKeySelector {
 
 // TransportSpec configures the agent-to-engine network path.
 type TransportSpec struct {
+	// Mode selects auto, TLS, or QUIC for the agent-to-engine transport. When
+	// omitted, auto is used unless the legacy useQuic field is present.
+	// +optional
+	Mode TunnelTransportMode `json:"mode,omitempty"`
 	// Bind controls the local bind address or interface used by the agent.
 	// +optional
 	Bind *BindSpec `json:"bind,omitempty"`
@@ -89,7 +103,8 @@ type TransportSpec struct {
 	// Proxy configures an HTTP proxy for TLS engine transport.
 	// +optional
 	Proxy *ProxySpec `json:"proxy,omitempty"`
-	// UseQUIC uses QUIC for the agent-to-engine transport.
+	// UseQUIC is the legacy transport selector. Prefer Mode.
+	// Deprecated: use Mode instead.
 	// +optional
 	UseQUIC *bool `json:"useQuic,omitempty"`
 }

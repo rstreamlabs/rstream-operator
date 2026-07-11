@@ -13,6 +13,7 @@ import (
 )
 
 func TestBuildAgentConfigInfersHTTP3Datagram(t *testing.T) {
+	guaranteedDelivery := true
 	tunnel := &tunnelsv1alpha1.RstreamTunnel{}
 	tunnel.Name = "web"
 	tunnel.Namespace = "demo"
@@ -25,7 +26,8 @@ func TestBuildAgentConfigInfersHTTP3Datagram(t *testing.T) {
 		HTTP: &tunnelsv1alpha1.HTTPSpec{
 			Version: tunnelsv1alpha1.HTTPVersion3,
 		},
-		Labels: map[string]string{"app": "web"},
+		DatagramGuaranteedDelivery: &guaranteedDelivery,
+		Labels:                     map[string]string{"app": "web"},
 	}
 	connection := &tunnelsv1alpha1.RstreamConnection{
 		Spec: tunnelsv1alpha1.RstreamConnectionSpec{Engine: "project.c.example.com:443"},
@@ -37,6 +39,9 @@ func TestBuildAgentConfigInfersHTTP3Datagram(t *testing.T) {
 	}
 	if cfg.Tunnel.HTTP == nil || cfg.Tunnel.HTTP.Version != "h3" {
 		t.Fatalf("Tunnel.HTTP.Version = %#v, want h3", cfg.Tunnel.HTTP)
+	}
+	if cfg.Tunnel.DatagramGuaranteedDelivery == nil || !*cfg.Tunnel.DatagramGuaranteedDelivery {
+		t.Fatalf("Tunnel.DatagramGuaranteedDelivery = %#v, want true", cfg.Tunnel.DatagramGuaranteedDelivery)
 	}
 	if got := cfg.Tunnel.Labels["rstream.kubernetes.uid"]; got != "uid-1" {
 		t.Fatalf("uid label = %q, want uid-1", got)
@@ -66,5 +71,34 @@ func TestMarshalAgentConfigDoesNotContainTokenSecretValue(t *testing.T) {
 	}
 	if strings.Contains(out, "token") {
 		t.Fatalf("agent config unexpectedly contains token-like text:\n%s", out)
+	}
+}
+
+func TestBuildAgentConfigMapsTunnelTransportMode(t *testing.T) {
+	legacyQUIC := true
+	connection := &tunnelsv1alpha1.RstreamConnection{
+		Spec: tunnelsv1alpha1.RstreamConnectionSpec{
+			Engine: "engine.example.com:443",
+			Transport: &tunnelsv1alpha1.TransportSpec{
+				Mode:    tunnelsv1alpha1.TunnelTransportModeAuto,
+				UseQUIC: &legacyQUIC,
+			},
+		},
+	}
+	cfg := BuildAgentConfig(
+		&tunnelsv1alpha1.RstreamTunnel{},
+		connection,
+		ResolvedTarget{Host: "svc.ns.svc", Port: 8080, Protocol: corev1.ProtocolTCP},
+		"host.example.com",
+		"engine.example.com:443",
+	)
+	if cfg.Connection.Transport == nil {
+		t.Fatal("Connection.Transport is nil")
+	}
+	if got := cfg.Connection.Transport.Mode; got != "auto" {
+		t.Fatalf("Connection.Transport.Mode = %q, want auto", got)
+	}
+	if cfg.Connection.Transport.UseQUIC == nil || !*cfg.Connection.Transport.UseQUIC {
+		t.Fatalf("Connection.Transport.UseQUIC = %#v, want true", cfg.Connection.Transport.UseQUIC)
 	}
 }

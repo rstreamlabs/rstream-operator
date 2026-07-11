@@ -55,17 +55,18 @@ func BuildAgentConfig(tunnel *tunnelsv1alpha1.RstreamTunnel, connection *tunnels
 			Transport: transportConfig(connection.Spec.Transport),
 		},
 		Tunnel: agentconfig.TunnelConfig{
-			Name:        RstreamName(tunnel),
-			Publish:     &publish,
-			Protocol:    string(protocol(tunnel)),
-			Type:        string(tunnelType),
-			Hostname:    strings.TrimSpace(hostname),
-			Labels:      labels,
-			UpstreamTLS: tunnel.Spec.UpstreamTLS,
-			TrustedIPs:  append([]string(nil), tunnel.Spec.TrustedIPs...),
-			GeoIP:       append([]string(nil), tunnel.Spec.GeoIP...),
-			HTTP:        httpConfig(tunnel.Spec.HTTP),
-			TLS:         tlsConfig(tunnel.Spec.TLS),
+			Name:                       RstreamName(tunnel),
+			Publish:                    &publish,
+			Protocol:                   string(protocol(tunnel)),
+			Type:                       string(tunnelType),
+			DatagramGuaranteedDelivery: tunnel.Spec.DatagramGuaranteedDelivery,
+			Hostname:                   strings.TrimSpace(hostname),
+			Labels:                     labels,
+			UpstreamTLS:                tunnel.Spec.UpstreamTLS,
+			TrustedIPs:                 append([]string(nil), tunnel.Spec.TrustedIPs...),
+			GeoIP:                      append([]string(nil), tunnel.Spec.GeoIP...),
+			HTTP:                       httpConfig(tunnel.Spec.HTTP),
+			TLS:                        tlsConfig(tunnel.Spec.TLS),
 		},
 		Target: agentconfig.TargetConfig{
 			Host:     target.Host,
@@ -163,6 +164,7 @@ func transportConfig(spec *tunnelsv1alpha1.TransportSpec) *agentconfig.Transport
 		return nil
 	}
 	out := &agentconfig.TransportConfig{
+		Mode:     string(spec.Mode),
 		IPFamily: string(spec.IPFamily),
 		MPTCP:    spec.MPTCP,
 		UseQUIC:  spec.UseQUIC,
