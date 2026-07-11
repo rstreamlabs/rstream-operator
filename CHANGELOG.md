@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.0](https://github.com/rstreamlabs/rstream-operator/compare/v0.2.3...v0.3.0) (2026-07-11)
+
+
+### Features
+
+* expose automatic and reliable datagram transports ([cc16432](https://github.com/rstreamlabs/rstream-operator/commit/cc16432e7a3cdb26da04b804f2e0398ba5058232))
+
 ## [0.2.3](https://github.com/rstreamlabs/rstream-operator/compare/v0.2.2...v0.2.3) (2026-05-26)
 
 
