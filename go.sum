@@ -116,8 +116,8 @@ github.com/quic-go/quic-go v0.59.0 h1:OLJkp1Mlm/aS7dpKgTc6cnpynnD2Xg7C1pwL6vy/SA
 github.com/quic-go/quic-go v0.59.0/go.mod h1:upnsH4Ju1YkqpLXC305eW3yDZ4NfnNbmQRCMWS58IKU=
 github.com/rogpeppe/go-internal v1.14.1 h1:UQB4HGPB6osV0SQTLymcB4TgvyWu6ZyliaW0tI/otEQ=
 github.com/rogpeppe/go-internal v1.14.1/go.mod h1:MaRKkUm5W0goXpeCfT7UZI6fk/L7L7so1lCWt35ZSgc=
-github.com/rstreamlabs/rstream-go v1.25.0 h1:yqf3hDK+2adZW/CTIlN2YLlvYz7Oy6Lbm4qKb1sCHiw=
-github.com/rstreamlabs/rstream-go v1.25.0/go.mod h1:07a0kMtO2wZc9kraJ668nUOrB7ol9i9M4PqJO1F/oMA=
+github.com/rstreamlabs/rstream-go v1.25.1 h1:QI2OhMTfJ0SMBVeTltkMlDWLZkkfShLif+pQPK2bLG4=
+github.com/rstreamlabs/rstream-go v1.25.1/go.mod h1:07a0kMtO2wZc9kraJ668nUOrB7ol9i9M4PqJO1F/oMA=
 github.com/spf13/pflag v1.0.9 h1:9exaQaMOCwffKiiiYk6/BndUBv+iRViNW+4lEMi0PvY=
 github.com/spf13/pflag v1.0.9/go.mod h1:McXfInJRrz4CZXVZOBLb0bTZqETkiAhM9Iw0y3An2Bg=
 github.com/stretchr/objx v0.1.0/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=
