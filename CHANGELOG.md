@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.0](https://github.com/rstreamlabs/rstream-operator/compare/v0.3.0...v0.4.0) (2026-07-18)
+
+
+### Features
+
+* add published TCP tunnels ([de854e4](https://github.com/rstreamlabs/rstream-operator/commit/de854e4227fe75b295e9f1a6ded07da4034e89fd))
+
 ## [0.3.0](https://github.com/rstreamlabs/rstream-operator/compare/v0.2.3...v0.3.0) (2026-07-11)
 
 
