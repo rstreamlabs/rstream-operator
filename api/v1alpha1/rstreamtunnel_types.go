@@ -9,6 +9,11 @@ import (
 )
 
 // RstreamTunnelSpec defines the desired state of a rstream tunnel.
+// +kubebuilder:validation:XValidation:rule="!has(self.tcpPort) || self.protocol == 'tcp'",message="tcpPort requires protocol tcp"
+// +kubebuilder:validation:XValidation:rule="self.protocol != 'tcp' || !has(self.publish) || self.publish",message="protocol tcp requires a published tunnel"
+// +kubebuilder:validation:XValidation:rule="self.protocol != 'tcp' || !has(self.type) || self.type == 'bytestream'",message="protocol tcp requires tunnel type bytestream"
+// +kubebuilder:validation:XValidation:rule="self.protocol != 'tcp' || !has(self.hostname)",message="protocol tcp does not support hostname"
+// +kubebuilder:validation:XValidation:rule="self.protocol != 'tcp' || (!has(self.http) && !has(self.tls))",message="protocol tcp does not support HTTP or TLS settings"
 type RstreamTunnelSpec struct {
 	// ConnectionRef references the rstream connection settings in this namespace.
 	// Defaults to a RstreamConnection named default.
@@ -36,6 +41,11 @@ type RstreamTunnelSpec struct {
 	// Hostname sets a stable public hostname. When omitted, the operator generates one once and stores it in status.
 	// +optional
 	Hostname string `json:"hostname,omitempty"`
+	// TCPPort requests a previously reserved public port for a published TCP tunnel. When omitted, the engine allocates an ephemeral port.
+	// +kubebuilder:validation:Minimum=1
+	// +kubebuilder:validation:Maximum=65535
+	// +optional
+	TCPPort *int32 `json:"tcpPort,omitempty"`
 	// Labels are attached to the rstream tunnel inventory object.
 	// +optional
 	Labels map[string]string `json:"labels,omitempty"`

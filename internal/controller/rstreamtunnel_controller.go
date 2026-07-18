@@ -69,6 +69,10 @@ func (r *RstreamTunnelReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 		}
 		return ctrl.Result{}, nil
 	}
+	if err := validateTunnelSpec(&tunnel); err != nil {
+		_ = r.markTunnelBlocked(ctx, req.NamespacedName, tunnelsv1alpha1.ReasonInvalidSpec, err.Error())
+		return ctrl.Result{}, nil
+	}
 	resolvedConnection, err := r.resolveConnection(ctx, &tunnel)
 	if err != nil {
 		_ = r.markTunnelBlocked(ctx, req.NamespacedName, tunnelsv1alpha1.ReasonConnectionMissing, err.Error())
@@ -181,6 +185,9 @@ func (r *RstreamTunnelReconciler) desiredHostname(ctx context.Context, tunnel *t
 	if tunnel.Spec.Publish != nil && !*tunnel.Spec.Publish {
 		return "", nil
 	}
+	if tunnel.Spec.Protocol == tunnelsv1alpha1.ProtocolTCP {
+		return "", nil
+	}
 	if strings.TrimSpace(tunnel.Spec.Hostname) != "" {
 		return strings.TrimSpace(tunnel.Spec.Hostname), nil
 	}
@@ -201,6 +208,31 @@ func (r *RstreamTunnelReconciler) desiredHostname(ctx context.Context, tunnel *t
 		return "", err
 	}
 	return hostname, nil
+}
+
+func validateTunnelSpec(tunnel *tunnelsv1alpha1.RstreamTunnel) error {
+	if tunnel.Spec.TCPPort != nil && tunnel.Spec.Protocol != tunnelsv1alpha1.ProtocolTCP {
+		return fmt.Errorf("tcpPort requires protocol %q", tunnelsv1alpha1.ProtocolTCP)
+	}
+	if tunnel.Spec.Protocol != tunnelsv1alpha1.ProtocolTCP {
+		return nil
+	}
+	if tunnel.Spec.Publish != nil && !*tunnel.Spec.Publish {
+		return fmt.Errorf("protocol %q requires a published tunnel", tunnelsv1alpha1.ProtocolTCP)
+	}
+	if tunnel.Spec.Type != "" && tunnel.Spec.Type != tunnelsv1alpha1.TunnelTypeBytestream {
+		return fmt.Errorf("protocol %q requires tunnel type %q", tunnelsv1alpha1.ProtocolTCP, tunnelsv1alpha1.TunnelTypeBytestream)
+	}
+	if strings.TrimSpace(tunnel.Spec.Hostname) != "" {
+		return fmt.Errorf("protocol %q does not support hostname", tunnelsv1alpha1.ProtocolTCP)
+	}
+	if tunnel.Spec.HTTP != nil || tunnel.Spec.TLS != nil {
+		return fmt.Errorf("protocol %q does not support HTTP or TLS settings", tunnelsv1alpha1.ProtocolTCP)
+	}
+	if tunnel.Spec.DatagramGuaranteedDelivery != nil && *tunnel.Spec.DatagramGuaranteedDelivery {
+		return fmt.Errorf("protocol %q does not support datagram guaranteed delivery", tunnelsv1alpha1.ProtocolTCP)
+	}
+	return nil
 }
 
 func (r *RstreamTunnelReconciler) applyChildren(ctx context.Context, tunnel *tunnelsv1alpha1.RstreamTunnel, connection *tunnelsv1alpha1.RstreamConnection, opts resources.BuildOptions) error {
@@ -281,7 +313,7 @@ func (r *RstreamTunnelReconciler) markReconciled(ctx context.Context, key types.
 		current.Status.AgentDeployment = names.Deployment
 		current.Status.Target = target.Address()
 		current.Status.RstreamName = resources.RstreamName(current)
-		if hostname != "" {
+		if hostname != "" || current.Spec.Protocol == tunnelsv1alpha1.ProtocolTCP {
 			current.Status.Hostname = hostname
 		}
 		setCondition(&current.Status.Conditions, current.Generation, tunnelsv1alpha1.ConditionAccepted, metav1.ConditionTrue, tunnelsv1alpha1.ReasonAccepted, "Tunnel spec is accepted.")

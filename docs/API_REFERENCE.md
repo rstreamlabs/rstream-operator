@@ -122,10 +122,11 @@ spec:
 | `target.service.port` | yes | Service port name or number. |
 | `tunnelName` | no | Name registered in rstream. Defaults to `<namespace>-<name>`. |
 | `publish` | no | Publish through the rstream edge. Defaults to `true`. |
-| `protocol` | no | `http`, `tls`, `dtls`, or `quic`. Defaults to `http`. |
+| `protocol` | no | `http`, `tls`, `dtls`, `quic`, or `tcp`. Defaults to `http`. |
 | `type` | no | `bytestream` or `datagram`. Inferred when omitted. |
 | `datagramGuaranteedDelivery` | no | Requires reliable delivery for datagram tunnels. Defaults to `false`. |
 | `hostname` | no | Stable public hostname. Generated and persisted in status when omitted. |
+| `tcpPort` | no | Reserved public port requested by a published TCP tunnel. Omit it for an ephemeral port. |
 | `labels` | no | Labels added to the rstream tunnel inventory. |
 | `upstreamTLS` | no | Marks the Kubernetes upstream as TLS-enabled. |
 | `trustedIPs` | no | Source CIDRs allowed by the edge. |
@@ -141,9 +142,19 @@ The operator validates that the Service port protocol matches the tunnel data ty
 - `http` with `http/1.1` or `h2c`: Service port must be TCP.
 - `http` with `h3`: Service port must be UDP.
 - `tls`: Service port must be TCP.
+- `tcp`: Service port must be TCP and the tunnel must be published as a bytestream.
 - `dtls` or `quic`: Service port must be UDP.
 
 Set `datagramGuaranteedDelivery: true` only on datagram tunnels. It disables unreliable datagram fast paths, including QUIC datagrams on the agent-to-engine leg, when packet loss is not acceptable.
+
+### Published TCP
+
+```yaml
+protocol: tcp
+tcpPort: 10042
+```
+
+Omit `tcpPort` to let the engine allocate an ephemeral port. A specified port must already be reserved for the project through the rstream CLI or Dashboard. Published TCP carries the downstream connection as-is: rstream does not add application-level encryption. Use a secure protocol such as SSH, or use a TLS tunnel when rstream should terminate or pass through TLS.
 
 ### HTTP
 

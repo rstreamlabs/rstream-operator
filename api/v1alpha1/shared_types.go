@@ -5,7 +5,7 @@ package v1alpha1
 import corev1 "k8s.io/api/core/v1"
 
 // Protocol is the public protocol exposed by the rstream edge.
-// +kubebuilder:validation:Enum=http;tls;dtls;quic
+// +kubebuilder:validation:Enum=http;tls;dtls;quic;tcp
 type Protocol string
 
 const (
@@ -13,6 +13,7 @@ const (
 	ProtocolTLS  Protocol = "tls"
 	ProtocolDTLS Protocol = "dtls"
 	ProtocolQUIC Protocol = "quic"
+	ProtocolTCP  Protocol = "tcp"
 )
 
 // TunnelType controls whether the tunnel carries stream or datagram traffic.

@@ -1194,6 +1194,7 @@ spec:
                 - tls
                 - dtls
                 - quic
+                - tcp
                 type: string
               publish:
                 default: true
@@ -1227,6 +1228,14 @@ spec:
                 required:
                 - service
                 type: object
+              tcpPort:
+                description: TCPPort requests a previously reserved public port for
+                  a published TCP tunnel. When omitted, the engine allocates an ephemeral
+                  port.
+                format: int32
+                maximum: 65535
+                minimum: 1
+                type: integer
               tls:
                 description: TLS configures TLS-specific edge behavior.
                 properties:
@@ -1276,6 +1285,17 @@ spec:
             required:
             - target
             type: object
+            x-kubernetes-validations:
+            - message: tcpPort requires protocol tcp
+              rule: '!has(self.tcpPort) || self.protocol == ''tcp'''
+            - message: protocol tcp requires a published tunnel
+              rule: self.protocol != 'tcp' || !has(self.publish) || self.publish
+            - message: protocol tcp requires tunnel type bytestream
+              rule: self.protocol != 'tcp' || !has(self.type) || self.type == 'bytestream'
+            - message: protocol tcp does not support hostname
+              rule: self.protocol != 'tcp' || !has(self.hostname)
+            - message: protocol tcp does not support HTTP or TLS settings
+              rule: self.protocol != 'tcp' || (!has(self.http) && !has(self.tls))
           status:
             description: RstreamTunnelStatus defines the observed state of RstreamTunnel.
             properties:

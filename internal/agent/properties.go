@@ -34,6 +34,33 @@ func TunnelProperties(cfg agentconfig.TunnelConfig) (rstream.TunnelProperties, e
 		}
 		props.Protocol = &val
 	}
+	if cfg.TCPPort != nil {
+		if props.Protocol == nil || *props.Protocol != rstream.ProtocolTCP {
+			return props, fmt.Errorf("tcpPort requires protocol %q", rstream.ProtocolTCP)
+		}
+		if *cfg.TCPPort == 0 || *cfg.TCPPort > 65535 {
+			return props, fmt.Errorf("tcpPort must be between 1 and 65535")
+		}
+		props.Port = cfg.TCPPort
+	}
+	if props.Protocol != nil && *props.Protocol == rstream.ProtocolTCP {
+		if props.Publish != nil && !*props.Publish {
+			return props, fmt.Errorf("protocol %q requires a published tunnel", rstream.ProtocolTCP)
+		}
+		if props.Type != nil && *props.Type != rstream.TunnelTypeBytestream {
+			return props, fmt.Errorf("protocol %q requires tunnel type %q", rstream.ProtocolTCP, rstream.TunnelTypeBytestream)
+		}
+		if strings.TrimSpace(cfg.Hostname) != "" || cfg.HTTP != nil || cfg.TLS != nil {
+			return props, fmt.Errorf("protocol %q does not support hostname, HTTP, or TLS settings", rstream.ProtocolTCP)
+		}
+		if cfg.DatagramGuaranteedDelivery != nil && *cfg.DatagramGuaranteedDelivery {
+			return props, fmt.Errorf("protocol %q does not support datagram guaranteed delivery", rstream.ProtocolTCP)
+		}
+		publish := true
+		tunnelType := rstream.TunnelTypeBytestream
+		props.Publish = &publish
+		props.Type = &tunnelType
+	}
 	if cfg.DatagramGuaranteedDelivery != nil {
 		if *cfg.DatagramGuaranteedDelivery && props.Type != nil && *props.Type != rstream.TunnelTypeDatagram {
 			return props, fmt.Errorf("datagram guaranteed delivery requires tunnel type %q", rstream.TunnelTypeDatagram)
@@ -128,6 +155,8 @@ func parseProtocol(val string) (rstream.Protocol, error) {
 		return rstream.ProtocolDTLS, nil
 	case string(rstream.ProtocolQUIC):
 		return rstream.ProtocolQUIC, nil
+	case string(rstream.ProtocolTCP):
+		return rstream.ProtocolTCP, nil
 	default:
 		return "", fmt.Errorf("invalid protocol %q", val)
 	}
