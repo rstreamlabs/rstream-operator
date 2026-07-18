@@ -136,6 +136,20 @@ spec:
       rstream: true
 ```
 
+Published TCP tunnels are also supported for services such as SSH:
+
+```yaml
+spec:
+  target:
+    service:
+      name: ssh-server
+      port: ssh
+  protocol: tcp
+  tcpPort: 10042
+```
+
+`tcpPort` is optional. When present, it must be a port reserved for the project through the rstream CLI or Dashboard. Published TCP does not add downstream encryption; use a secure application protocol or a TLS tunnel.
+
 See [docs/API_REFERENCE.md](docs/API_REFERENCE.md) for the field reference.
 
 ## Runtime Model

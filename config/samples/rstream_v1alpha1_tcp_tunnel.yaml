@@ -1,0 +1,19 @@
+# See LICENSE file in the project root for license information.
+
+apiVersion: tunnels.rstream.io/v1alpha1
+kind: RstreamTunnel
+metadata:
+  name: ssh
+  namespace: rstream-demo
+spec:
+  connectionRef:
+    name: default
+  target:
+    service:
+      name: ssh-server
+      port: ssh
+  publish: true
+  protocol: tcp
+  tcpPort: 10042
+  labels:
+    app: ssh-server

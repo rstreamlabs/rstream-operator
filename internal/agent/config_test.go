@@ -75,6 +75,47 @@ func TestTunnelPropertiesRejectsDatagramGuaranteedDeliveryForBytestream(t *testi
 	}
 }
 
+func TestTunnelPropertiesMapsPublishedTCP(t *testing.T) {
+	port := uint32(10042)
+	props, err := TunnelProperties(agentconfig.TunnelConfig{Name: "ssh", Protocol: "tcp", TCPPort: &port})
+	if err != nil {
+		t.Fatalf("TunnelProperties() error = %v", err)
+	}
+	if props.Protocol == nil || *props.Protocol != rstream.ProtocolTCP {
+		t.Fatalf("Protocol = %#v, want tcp", props.Protocol)
+	}
+	if props.Port == nil || *props.Port != port {
+		t.Fatalf("Port = %#v, want %d", props.Port, port)
+	}
+	if props.Publish == nil || !*props.Publish {
+		t.Fatalf("Publish = %#v, want true", props.Publish)
+	}
+	if props.Type == nil || *props.Type != rstream.TunnelTypeBytestream {
+		t.Fatalf("Type = %#v, want bytestream", props.Type)
+	}
+}
+
+func TestTunnelPropertiesRejectsInvalidPublishedTCPSettings(t *testing.T) {
+	port := uint32(10042)
+	unpublished := false
+	for _, test := range []struct {
+		name string
+		cfg  agentconfig.TunnelConfig
+		want string
+	}{
+		{name: "port without tcp", cfg: agentconfig.TunnelConfig{Name: "ssh", Protocol: "tls", TCPPort: &port}, want: "tcpPort requires"},
+		{name: "unpublished", cfg: agentconfig.TunnelConfig{Name: "ssh", Protocol: "tcp", Publish: &unpublished}, want: "requires a published"},
+		{name: "hostname", cfg: agentconfig.TunnelConfig{Name: "ssh", Protocol: "tcp", Hostname: "ssh.example.com"}, want: "does not support"},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			_, err := TunnelProperties(test.cfg)
+			if err == nil || !strings.Contains(err.Error(), test.want) {
+				t.Fatalf("TunnelProperties() error = %v, want %q", err, test.want)
+			}
+		})
+	}
+}
+
 func TestTransportModes(t *testing.T) {
 	for _, test := range []struct {
 		name string

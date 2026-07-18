@@ -419,6 +419,11 @@ func (in *RstreamTunnelSpec) DeepCopyInto(out *RstreamTunnelSpec) {
 		*out = new(bool)
 		**out = **in
 	}
+	if in.TCPPort != nil {
+		in, out := &in.TCPPort, &out.TCPPort
+		*out = new(int32)
+		**out = **in
+	}
 	if in.Labels != nil {
 		in, out := &in.Labels, &out.Labels
 		*out = make(map[string]string, len(*in))

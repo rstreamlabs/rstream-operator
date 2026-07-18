@@ -203,6 +203,32 @@ func TestTunnelReconcilerFinalizerDeletesChildren(t *testing.T) {
 	}
 }
 
+func TestValidateTunnelSpecPublishedTCP(t *testing.T) {
+	port := int32(10042)
+	unpublished := false
+	for _, test := range []struct {
+		name    string
+		tunnel  *tunnelsv1alpha1.RstreamTunnel
+		wantErr string
+	}{
+		{name: "ephemeral", tunnel: &tunnelsv1alpha1.RstreamTunnel{Spec: tunnelsv1alpha1.RstreamTunnelSpec{Protocol: tunnelsv1alpha1.ProtocolTCP}}},
+		{name: "reserved", tunnel: &tunnelsv1alpha1.RstreamTunnel{Spec: tunnelsv1alpha1.RstreamTunnelSpec{Protocol: tunnelsv1alpha1.ProtocolTCP, TCPPort: &port}}},
+		{name: "port without tcp", tunnel: &tunnelsv1alpha1.RstreamTunnel{Spec: tunnelsv1alpha1.RstreamTunnelSpec{Protocol: tunnelsv1alpha1.ProtocolTLS, TCPPort: &port}}, wantErr: "tcpPort requires"},
+		{name: "unpublished", tunnel: &tunnelsv1alpha1.RstreamTunnel{Spec: tunnelsv1alpha1.RstreamTunnelSpec{Protocol: tunnelsv1alpha1.ProtocolTCP, Publish: &unpublished}}, wantErr: "requires a published"},
+		{name: "hostname", tunnel: &tunnelsv1alpha1.RstreamTunnel{Spec: tunnelsv1alpha1.RstreamTunnelSpec{Protocol: tunnelsv1alpha1.ProtocolTCP, Hostname: "ssh.example.com"}}, wantErr: "does not support hostname"},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			err := validateTunnelSpec(test.tunnel)
+			if test.wantErr == "" && err != nil {
+				t.Fatalf("validateTunnelSpec() error = %v", err)
+			}
+			if test.wantErr != "" && (err == nil || !strings.Contains(err.Error(), test.wantErr)) {
+				t.Fatalf("validateTunnelSpec() error = %v, want %q", err, test.wantErr)
+			}
+		})
+	}
+}
+
 func testScheme(t *testing.T) *runtime.Scheme {
 	t.Helper()
 	scheme := runtime.NewScheme()

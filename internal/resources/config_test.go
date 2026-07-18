@@ -102,3 +102,29 @@ func TestBuildAgentConfigMapsTunnelTransportMode(t *testing.T) {
 		t.Fatalf("Connection.Transport.UseQUIC = %#v, want true", cfg.Connection.Transport.UseQUIC)
 	}
 }
+
+func TestBuildAgentConfigMapsPublishedTCPPort(t *testing.T) {
+	port := int32(10042)
+	tunnel := &tunnelsv1alpha1.RstreamTunnel{
+		Spec: tunnelsv1alpha1.RstreamTunnelSpec{
+			Protocol: tunnelsv1alpha1.ProtocolTCP,
+			TCPPort:  &port,
+		},
+	}
+	cfg := BuildAgentConfig(
+		tunnel,
+		&tunnelsv1alpha1.RstreamConnection{},
+		ResolvedTarget{Host: "ssh.default.svc", Port: 22, Protocol: corev1.ProtocolTCP},
+		"",
+		"engine.example.com:443",
+	)
+	if cfg.Tunnel.Protocol != "tcp" {
+		t.Fatalf("Tunnel.Protocol = %q, want tcp", cfg.Tunnel.Protocol)
+	}
+	if cfg.Tunnel.TCPPort == nil || *cfg.Tunnel.TCPPort != uint32(port) {
+		t.Fatalf("Tunnel.TCPPort = %#v, want %d", cfg.Tunnel.TCPPort, port)
+	}
+	if cfg.Tunnel.Hostname != "" {
+		t.Fatalf("Tunnel.Hostname = %q, want empty", cfg.Tunnel.Hostname)
+	}
+}

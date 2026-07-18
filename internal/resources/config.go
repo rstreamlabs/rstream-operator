@@ -61,6 +61,7 @@ func BuildAgentConfig(tunnel *tunnelsv1alpha1.RstreamTunnel, connection *tunnels
 			Type:                       string(tunnelType),
 			DatagramGuaranteedDelivery: tunnel.Spec.DatagramGuaranteedDelivery,
 			Hostname:                   strings.TrimSpace(hostname),
+			TCPPort:                    tcpPort(tunnel.Spec.TCPPort),
 			Labels:                     labels,
 			UpstreamTLS:                tunnel.Spec.UpstreamTLS,
 			TrustedIPs:                 append([]string(nil), tunnel.Spec.TrustedIPs...),
@@ -95,6 +96,14 @@ func BuildAgentConfig(tunnel *tunnelsv1alpha1.RstreamTunnel, connection *tunnels
 		}
 	}
 	return cfg
+}
+
+func tcpPort(port *int32) *uint32 {
+	if port == nil {
+		return nil
+	}
+	value := uint32(*port)
+	return &value
 }
 
 func MarshalAgentConfig(cfg agentconfig.Config) (string, error) {

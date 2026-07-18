@@ -60,6 +60,7 @@ type TunnelConfig struct {
 	Type                       string            `yaml:"type,omitempty"`
 	DatagramGuaranteedDelivery *bool             `yaml:"datagramGuaranteedDelivery,omitempty"`
 	Hostname                   string            `yaml:"hostname,omitempty"`
+	TCPPort                    *uint32           `yaml:"tcpPort,omitempty"`
 	Labels                     map[string]string `yaml:"labels,omitempty"`
 	UpstreamTLS                *bool             `yaml:"upstreamTLS,omitempty"`
 	TrustedIPs                 []string          `yaml:"trustedIPs,omitempty"`
