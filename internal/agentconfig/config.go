@@ -59,6 +59,7 @@ type TunnelConfig struct {
 	Protocol                   string            `yaml:"protocol,omitempty"`
 	Type                       string            `yaml:"type,omitempty"`
 	DatagramGuaranteedDelivery *bool             `yaml:"datagramGuaranteedDelivery,omitempty"`
+	AllowCrossRegionRouting    *bool             `yaml:"allowCrossRegionRouting,omitempty"`
 	Hostname                   string            `yaml:"hostname,omitempty"`
 	TCPPort                    *uint32           `yaml:"tcpPort,omitempty"`
 	Labels                     map[string]string `yaml:"labels,omitempty"`

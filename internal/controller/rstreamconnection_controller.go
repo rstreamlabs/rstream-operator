@@ -40,6 +40,7 @@ func (r *RstreamConnectionReconciler) Reconcile(ctx context.Context, req ctrl.Re
 		return ctrl.Result{}, r.markConnection(ctx, req.NamespacedName, metav1.ConditionFalse, tunnelsv1alpha1.ReasonSecretMissing, "tokenSecretRef or mtls is required")
 	}
 	token := ""
+	headers := make(map[string]string, len(connection.Spec.ControlPlaneHeaders))
 	for _, ref := range refs {
 		var secret corev1.Secret
 		key := types.NamespacedName{Namespace: connection.Namespace, Name: ref.Name}
@@ -55,8 +56,9 @@ func (r *RstreamConnectionReconciler) Reconcile(ctx context.Context, req ctrl.Re
 		if connection.Spec.TokenSecretRef != nil && ref.Name == connection.Spec.TokenSecretRef.Name && ref.Key == connection.Spec.TokenSecretRef.Key {
 			token = strings.TrimSpace(string(secret.Data[ref.Key]))
 		}
+		addControlPlaneHeaders(headers, &connection, ref, string(secret.Data[ref.Key]))
 	}
-	resolution, err := r.connectionResolver().Resolve(ctx, &connection, token)
+	resolution, err := r.connectionResolver().Resolve(ctx, &connection, token, headers)
 	if err != nil {
 		return ctrl.Result{}, r.markConnection(ctx, req.NamespacedName, metav1.ConditionFalse, tunnelsv1alpha1.ReasonInvalidSpec, err.Error())
 	}
@@ -77,6 +79,7 @@ func (r *RstreamConnectionReconciler) markConnection(ctx context.Context, key ty
 			connection.Status.ProjectID = ""
 			connection.Status.ProjectEndpoint = ""
 			connection.Status.Engine = ""
+			connection.Status.Region = ""
 		}
 		setReady(&connection.Status.Conditions, connection.Generation, status, reason, message)
 	})
@@ -88,6 +91,7 @@ func (r *RstreamConnectionReconciler) markConnectionReady(ctx context.Context, k
 		connection.Status.ProjectID = resolution.ProjectID
 		connection.Status.ProjectEndpoint = resolution.ProjectEndpoint
 		connection.Status.Engine = resolution.Engine
+		connection.Status.Region = resolution.Region
 		setReady(&connection.Status.Conditions, connection.Generation, metav1.ConditionTrue, tunnelsv1alpha1.ReasonReady, "Connection settings are ready.")
 	})
 }
