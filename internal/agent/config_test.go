@@ -63,6 +63,17 @@ func TestTunnelPropertiesMapsDatagramGuaranteedDelivery(t *testing.T) {
 	}
 }
 
+func TestTunnelPropertiesMapsCrossRegionRoutingForHTTP(t *testing.T) {
+	allow := true
+	props, err := TunnelProperties(agentconfig.TunnelConfig{Name: "web", Protocol: "http", AllowCrossRegionRouting: &allow})
+	if err != nil {
+		t.Fatalf("TunnelProperties() error = %v", err)
+	}
+	if props.AllowCrossRegionRouting == nil || !*props.AllowCrossRegionRouting {
+		t.Fatalf("AllowCrossRegionRouting = %#v, want true", props.AllowCrossRegionRouting)
+	}
+}
+
 func TestTunnelPropertiesRejectsDatagramGuaranteedDeliveryForBytestream(t *testing.T) {
 	guaranteedDelivery := true
 	_, err := TunnelProperties(agentconfig.TunnelConfig{

@@ -60,6 +60,7 @@ func BuildAgentConfig(tunnel *tunnelsv1alpha1.RstreamTunnel, connection *tunnels
 			Protocol:                   string(protocol(tunnel)),
 			Type:                       string(tunnelType),
 			DatagramGuaranteedDelivery: tunnel.Spec.DatagramGuaranteedDelivery,
+			AllowCrossRegionRouting:    tunnel.Spec.AllowCrossRegionRouting,
 			Hostname:                   strings.TrimSpace(hostname),
 			TCPPort:                    tcpPort(tunnel.Spec.TCPPort),
 			Labels:                     labels,

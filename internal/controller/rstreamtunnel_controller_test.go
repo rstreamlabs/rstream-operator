@@ -168,6 +168,51 @@ func TestTunnelReconcilerMarksMissingSecret(t *testing.T) {
 	}
 }
 
+func TestTunnelReconcilerKeepsControlPlaneHeadersManagerOnly(t *testing.T) {
+	ctx := context.Background()
+	scheme := testScheme(t)
+	tunnel := &tunnelsv1alpha1.RstreamTunnel{ObjectMeta: metav1.ObjectMeta{Name: "web", Namespace: "demo"}}
+	connection := &tunnelsv1alpha1.RstreamConnection{
+		ObjectMeta: metav1.ObjectMeta{Name: "default", Namespace: "demo"},
+		Spec: tunnelsv1alpha1.RstreamConnectionSpec{
+			ProjectEndpoint: "abc12345",
+			TokenSecretRef:  &tunnelsv1alpha1.SecretKeyRef{Name: "credentials", Key: "token"},
+			ControlPlaneHeaders: []tunnelsv1alpha1.ControlPlaneHeader{
+				{Name: "x-deployment-bypass", ValueSecretRef: tunnelsv1alpha1.SecretKeyRef{Name: "control-plane", Key: "bypass"}},
+			},
+		},
+	}
+	credentials := &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{Name: "credentials", Namespace: "demo", ResourceVersion: "11"},
+		Data:       map[string][]byte{"token": []byte("token-value")},
+	}
+	controlPlane := &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{Name: "control-plane", Namespace: "demo", ResourceVersion: "22"},
+		Data:       map[string][]byte{"bypass": []byte("bypass-value")},
+	}
+	k8sClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(connection, credentials, controlPlane).Build()
+	resolver := &capturingConnectionResolver{resolution: connectionResolution{Engine: "abc12345.c.example.com:443"}}
+	reconciler := &RstreamTunnelReconciler{Client: k8sClient, Scheme: scheme, ConnectionResolver: resolver}
+	resolved, err := reconciler.resolveConnection(ctx, tunnel)
+	if err != nil {
+		t.Fatalf("resolveConnection() error = %v", err)
+	}
+	if resolver.token != "token-value" || resolver.headers["x-deployment-bypass"] != "bypass-value" {
+		t.Fatalf("unexpected resolver credentials: token=%q headers=%#v", resolver.token, resolver.headers)
+	}
+	if got, want := strings.Join(resolved.SecretResourceVersions, ","), "credentials:11"; got != want {
+		t.Fatalf("SecretResourceVersions = %q, want %q", got, want)
+	}
+	cfg := resources.BuildAgentConfig(tunnel, resolved.Connection, resources.ResolvedTarget{}, "", resolved.Engine)
+	configYAML, err := resources.MarshalAgentConfig(cfg)
+	if err != nil {
+		t.Fatalf("MarshalAgentConfig() error = %v", err)
+	}
+	if strings.Contains(configYAML, "bypass-value") || strings.Contains(configYAML, "x-deployment-bypass") {
+		t.Fatalf("agent config contains manager-only control plane credentials:\n%s", configYAML)
+	}
+}
+
 func TestTunnelReconcilerFinalizerDeletesChildren(t *testing.T) {
 	ctx := context.Background()
 	scheme := testScheme(t)

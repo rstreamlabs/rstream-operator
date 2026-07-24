@@ -5,6 +5,7 @@ package v1alpha1
 import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
@@ -38,6 +39,9 @@ type RstreamTunnelSpec struct {
 	// DatagramGuaranteedDelivery requires reliable delivery for datagram tunnels. When omitted or false, datagram tunnels may use an unreliable fast path.
 	// +optional
 	DatagramGuaranteedDelivery *bool `json:"datagramGuaranteedDelivery,omitempty"`
+	// AllowCrossRegionRouting permits the engine to route payloads across regions when ingress and tunnel owner differ. Same-region traffic remains direct.
+	// +optional
+	AllowCrossRegionRouting *bool `json:"allowCrossRegionRouting,omitempty"`
 	// Hostname sets a stable public hostname. When omitted, the operator generates one once and stores it in status.
 	// +optional
 	Hostname string `json:"hostname,omitempty"`
@@ -229,6 +233,7 @@ type RstreamTunnelList struct {
 	Items           []RstreamTunnel `json:"items"`
 }
 
-func init() {
-	SchemeBuilder.Register(&RstreamTunnel{}, &RstreamTunnelList{})
+func addRstreamTunnelTypes(scheme *runtime.Scheme) error {
+	scheme.AddKnownTypes(GroupVersion, &RstreamTunnel{}, &RstreamTunnelList{})
+	return nil
 }

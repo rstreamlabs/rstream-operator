@@ -88,12 +88,13 @@ metadata:
 spec:
   projectEndpoint: "<project-endpoint>"
   apiURL: https://rstream.io
+  region: auto
   tokenSecretRef:
     name: rstream-credentials
     key: token
 ```
 
-`projectEndpoint` is the preferred hosted rstream path. The operator resolves the current engine address through the Control plane and stores the result in `RstreamConnection.status.engine`.
+`projectEndpoint` is the preferred hosted rstream path. The operator resolves the current engine address through the Control plane and stores the result in `RstreamConnection.status.engine`. A Global project uses its global endpoint with `region: auto`; an explicit authorized region keeps the agent control channel on that regional endpoint.
 
 For self-hosted engines or internal test environments without a Control plane, specify `engine` directly instead:
 
@@ -134,7 +135,10 @@ spec:
     auth:
       token: true
       rstream: true
+  allowCrossRegionRouting: false
 ```
+
+`allowCrossRegionRouting` is a per-tunnel policy. It permits a cross-region payload path when ingress and tunnel owner differ, but same-region traffic remains direct. It applies to every supported protocol.
 
 Published TCP tunnels are also supported for services such as SSH:
 
