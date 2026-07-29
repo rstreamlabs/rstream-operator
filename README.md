@@ -154,7 +154,7 @@ spec:
 
 `tcpPort` is optional. When present, it must be a port reserved for the project through the rstream CLI or Dashboard. Published TCP does not add downstream encryption; use a secure application protocol or a TLS tunnel.
 
-See [docs/API_REFERENCE.md](docs/API_REFERENCE.md) for the field reference.
+See [docs/002-api-reference.md](docs/002-api-reference.md) for the field reference.
 
 ## Runtime Model
 
@@ -259,4 +259,4 @@ Use `RSTREAM_ENGINE=...` instead of `RSTREAM_PROJECT_ENDPOINT` when testing a se
 
 The script builds the image, loads it into Kind, installs the chart, creates a demo HTTP Service and `RstreamTunnel`, waits for `Ready`, and curls the forwarding address.
 
-More details are in [docs/RUNTIME_TESTING.md](docs/RUNTIME_TESTING.md).
+More details are in [docs/003-runtime-testing.md](docs/003-runtime-testing.md).
