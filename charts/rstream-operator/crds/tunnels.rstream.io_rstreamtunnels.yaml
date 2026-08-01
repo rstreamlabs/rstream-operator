@@ -1118,6 +1118,11 @@ spec:
                       type: object
                     type: array
                 type: object
+              allowCrossRegionRouting:
+                description: AllowCrossRegionRouting permits the engine to route payloads
+                  across regions when ingress and tunnel owner differ. Same-region
+                  traffic remains direct.
+                type: boolean
               connectionRef:
                 description: |-
                   ConnectionRef references the rstream connection settings in this namespace.

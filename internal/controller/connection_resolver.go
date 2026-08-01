@@ -4,14 +4,9 @@ package controller
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
-	"net/http"
-	"net/url"
 	"strings"
-	"time"
 
 	"github.com/rstreamlabs/rstream-go/controlplane"
 	tunnelsv1alpha1 "github.com/rstreamlabs/rstream-operator/api/v1alpha1"
@@ -19,45 +14,51 @@ import (
 
 const defaultAPIURL = "https://rstream.io"
 
-var controlPlaneHTTPClient = &http.Client{Timeout: 10 * time.Second}
-
 type connectionResolution struct {
 	Engine          string
 	APIURL          string
 	ProjectID       string
 	ProjectEndpoint string
+	Region          string
 }
 
 type connectionResolver interface {
-	Resolve(ctx context.Context, connection *tunnelsv1alpha1.RstreamConnection, token string) (connectionResolution, error)
+	Resolve(ctx context.Context, connection *tunnelsv1alpha1.RstreamConnection, token string, headers map[string]string) (connectionResolution, error)
 }
 
 type defaultConnectionResolver struct{}
 
-func (defaultConnectionResolver) Resolve(ctx context.Context, connection *tunnelsv1alpha1.RstreamConnection, token string) (connectionResolution, error) {
+func (defaultConnectionResolver) Resolve(ctx context.Context, connection *tunnelsv1alpha1.RstreamConnection, token string, headers map[string]string) (connectionResolution, error) {
 	if connection == nil {
 		return connectionResolution{}, errors.New("RstreamConnection is nil")
 	}
 	if engine := strings.TrimSpace(connection.Spec.Engine); engine != "" {
+		if strings.TrimSpace(connection.Spec.Region) != "" {
+			return connectionResolution{}, errors.New("region cannot be used with an explicit engine")
+		}
+		if len(headers) > 0 {
+			return connectionResolution{}, errors.New("controlPlaneHeaders cannot be used with an explicit engine")
+		}
 		return connectionResolution{Engine: engine}, nil
 	}
 	apiURL := connectionAPIURL(connection)
 	if strings.TrimSpace(token) == "" {
 		return connectionResolution{}, errors.New("tokenSecretRef is required when projectEndpoint or projectID is used")
 	}
+	client := controlplane.NewClient(apiURL, token, controlplane.WithHeaders(headers))
 	if endpoint := strings.TrimSpace(connection.Spec.ProjectEndpoint); endpoint != "" {
-		project, err := controlplane.NewClient(apiURL, token).ResolveProjectByEndpoint(ctx, endpoint)
+		project, err := client.ResolveProjectByEndpoint(ctx, endpoint)
 		if err != nil {
 			return connectionResolution{}, fmt.Errorf("resolve project endpoint %q: %w", endpoint, err)
 		}
-		return resolutionFromProject(apiURL, project)
+		return resolutionFromProject(apiURL, connection.Spec.Region, project)
 	}
 	if projectID := strings.TrimSpace(connection.Spec.ProjectID); projectID != "" {
-		project, err := resolveProjectByID(ctx, apiURL, token, projectID)
+		project, err := client.ResolveProjectByID(ctx, projectID)
 		if err != nil {
 			return connectionResolution{}, fmt.Errorf("resolve project ID %q: %w", projectID, err)
 		}
-		return resolutionFromProject(apiURL, project)
+		return resolutionFromProject(apiURL, connection.Spec.Region, project)
 	}
 	return connectionResolution{}, errors.New("one of projectEndpoint, projectID, or engine is required")
 }
@@ -72,43 +73,27 @@ func connectionAPIURL(connection *tunnelsv1alpha1.RstreamConnection) string {
 	return defaultAPIURL
 }
 
-func resolutionFromProject(apiURL string, project controlplane.Project) (connectionResolution, error) {
-	engine := project.EngineAddress()
+func resolutionFromProject(apiURL, region string, project controlplane.Project) (connectionResolution, error) {
+	normalizedRegion, err := controlplane.NormalizeRegion(region)
+	if err != nil {
+		return connectionResolution{}, err
+	}
+	engine, err := project.EngineAddressForRegion(normalizedRegion)
+	if err != nil {
+		return connectionResolution{}, err
+	}
 	if strings.TrimSpace(engine) == "" {
 		return connectionResolution{}, errors.New("resolved project does not include an engine address")
+	}
+	selectedRegion := normalizedRegion
+	if selectedRegion == "" {
+		selectedRegion = "auto"
 	}
 	return connectionResolution{
 		Engine:          engine,
 		APIURL:          apiURL,
 		ProjectID:       project.ID,
 		ProjectEndpoint: project.Endpoint,
+		Region:          selectedRegion,
 	}, nil
-}
-
-func resolveProjectByID(ctx context.Context, apiURL, token, projectID string) (controlplane.Project, error) {
-	fullURL := strings.TrimRight(strings.TrimSpace(apiURL), "/") + "/api/projects/tunnels/" + url.PathEscape(projectID)
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, fullURL, nil)
-	if err != nil {
-		return controlplane.Project{}, err
-	}
-	req.Header.Set("Accept", "application/json")
-	req.Header.Set("Authorization", "Bearer "+token)
-	resp, err := controlPlaneHTTPClient.Do(req)
-	if err != nil {
-		return controlplane.Project{}, err
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		body, _ := io.ReadAll(resp.Body)
-		message := strings.TrimSpace(string(body))
-		if message == "" {
-			message = resp.Status
-		}
-		return controlplane.Project{}, errors.New(message)
-	}
-	var project controlplane.Project
-	if err := json.NewDecoder(resp.Body).Decode(&project); err != nil {
-		return controlplane.Project{}, err
-	}
-	return project, nil
 }

@@ -5,6 +5,7 @@ package controller
 import (
 	"fmt"
 	"sort"
+	"strings"
 
 	tunnelsv1alpha1 "github.com/rstreamlabs/rstream-operator/api/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
@@ -28,26 +29,46 @@ func secretRefs(connection *tunnelsv1alpha1.RstreamConnection) []secretRef {
 	if connection == nil {
 		return nil
 	}
-	refs := make([]secretRef, 0, 5)
+	unique := make(map[secretRef]struct{}, 5+len(connection.Spec.ControlPlaneHeaders))
+	for _, ref := range agentSecretRefs(connection) {
+		unique[ref] = struct{}{}
+	}
+	for _, header := range connection.Spec.ControlPlaneHeaders {
+		unique[secretRef{Name: header.ValueSecretRef.Name, Key: header.ValueSecretRef.Key}] = struct{}{}
+	}
+	return sortedSecretRefs(unique)
+}
+
+func agentSecretRefs(connection *tunnelsv1alpha1.RstreamConnection) []secretRef {
+	if connection == nil {
+		return nil
+	}
+	unique := make(map[secretRef]struct{}, 5)
 	if connection.Spec.TokenSecretRef != nil {
-		refs = append(refs, secretRef{Name: connection.Spec.TokenSecretRef.Name, Key: connection.Spec.TokenSecretRef.Key})
+		unique[secretRef{Name: connection.Spec.TokenSecretRef.Name, Key: connection.Spec.TokenSecretRef.Key}] = struct{}{}
 	}
 	if connection.Spec.MTLS != nil {
-		refs = append(refs,
-			secretRef{Name: connection.Spec.MTLS.CertSecretRef.Name, Key: connection.Spec.MTLS.CertSecretRef.Key},
-			secretRef{Name: connection.Spec.MTLS.KeySecretRef.Name, Key: connection.Spec.MTLS.KeySecretRef.Key},
-		)
+		unique[secretRef{Name: connection.Spec.MTLS.CertSecretRef.Name, Key: connection.Spec.MTLS.CertSecretRef.Key}] = struct{}{}
+		unique[secretRef{Name: connection.Spec.MTLS.KeySecretRef.Name, Key: connection.Spec.MTLS.KeySecretRef.Key}] = struct{}{}
 		if connection.Spec.MTLS.CASecretRef != nil {
-			refs = append(refs, secretRef{Name: connection.Spec.MTLS.CASecretRef.Name, Key: connection.Spec.MTLS.CASecretRef.Key})
+			unique[secretRef{Name: connection.Spec.MTLS.CASecretRef.Name, Key: connection.Spec.MTLS.CASecretRef.Key}] = struct{}{}
 		}
 	}
 	if connection.Spec.Transport != nil && connection.Spec.Transport.Proxy != nil {
 		if connection.Spec.Transport.Proxy.UsernameSecretRef != nil {
-			refs = append(refs, secretRef{Name: connection.Spec.Transport.Proxy.UsernameSecretRef.Name, Key: connection.Spec.Transport.Proxy.UsernameSecretRef.Key})
+			unique[secretRef{Name: connection.Spec.Transport.Proxy.UsernameSecretRef.Name, Key: connection.Spec.Transport.Proxy.UsernameSecretRef.Key}] = struct{}{}
 		}
 		if connection.Spec.Transport.Proxy.PasswordSecretRef != nil {
-			refs = append(refs, secretRef{Name: connection.Spec.Transport.Proxy.PasswordSecretRef.Name, Key: connection.Spec.Transport.Proxy.PasswordSecretRef.Key})
+			unique[secretRef{Name: connection.Spec.Transport.Proxy.PasswordSecretRef.Name, Key: connection.Spec.Transport.Proxy.PasswordSecretRef.Key}] = struct{}{}
 		}
+	}
+	return sortedSecretRefs(unique)
+}
+
+func sortedSecretRefs(unique map[secretRef]struct{}) []secretRef {
+	refs := make([]secretRef, 0, len(unique))
+	for ref := range unique {
+		refs = append(refs, ref)
 	}
 	sort.Slice(refs, func(i, j int) bool {
 		if refs[i].Name == refs[j].Name {
@@ -56,6 +77,14 @@ func secretRefs(connection *tunnelsv1alpha1.RstreamConnection) []secretRef {
 		return refs[i].Name < refs[j].Name
 	})
 	return refs
+}
+
+func addControlPlaneHeaders(headers map[string]string, connection *tunnelsv1alpha1.RstreamConnection, ref secretRef, value string) {
+	for _, header := range connection.Spec.ControlPlaneHeaders {
+		if header.ValueSecretRef.Name == ref.Name && header.ValueSecretRef.Key == ref.Key {
+			headers[header.Name] = strings.TrimSpace(value)
+		}
+	}
 }
 
 func connectionReferencesSecret(connection *tunnelsv1alpha1.RstreamConnection, secretName string) bool {

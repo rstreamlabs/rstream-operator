@@ -88,12 +88,13 @@ metadata:
 spec:
   projectEndpoint: "<project-endpoint>"
   apiURL: https://rstream.io
+  region: auto
   tokenSecretRef:
     name: rstream-credentials
     key: token
 ```
 
-`projectEndpoint` is the preferred hosted rstream path. The operator resolves the current engine address through the Control plane and stores the result in `RstreamConnection.status.engine`.
+`projectEndpoint` is the preferred hosted rstream path. The operator resolves the current engine address through the Control plane and stores the result in `RstreamConnection.status.engine`. A Global project uses its global endpoint with `region: auto`; an explicit authorized region keeps the agent control channel on that regional endpoint.
 
 For self-hosted engines or internal test environments without a Control plane, specify `engine` directly instead:
 
@@ -134,7 +135,10 @@ spec:
     auth:
       token: true
       rstream: true
+  allowCrossRegionRouting: false
 ```
+
+`allowCrossRegionRouting` is a per-tunnel policy. It permits a cross-region payload path when ingress and tunnel owner differ, but same-region traffic remains direct. It applies to every supported protocol.
 
 Published TCP tunnels are also supported for services such as SSH:
 
@@ -150,7 +154,7 @@ spec:
 
 `tcpPort` is optional. When present, it must be a port reserved for the project through the rstream CLI or Dashboard. Published TCP does not add downstream encryption; use a secure application protocol or a TLS tunnel.
 
-See [docs/API_REFERENCE.md](docs/API_REFERENCE.md) for the field reference.
+See [docs/002-api-reference.md](docs/002-api-reference.md) for the field reference.
 
 ## Runtime Model
 
@@ -255,4 +259,4 @@ Use `RSTREAM_ENGINE=...` instead of `RSTREAM_PROJECT_ENDPOINT` when testing a se
 
 The script builds the image, loads it into Kind, installs the chart, creates a demo HTTP Service and `RstreamTunnel`, waits for `Ready`, and curls the forwarding address.
 
-More details are in [docs/RUNTIME_TESTING.md](docs/RUNTIME_TESTING.md).
+More details are in [docs/003-runtime-testing.md](docs/003-runtime-testing.md).

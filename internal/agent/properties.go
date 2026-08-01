@@ -67,6 +67,9 @@ func TunnelProperties(cfg agentconfig.TunnelConfig) (rstream.TunnelProperties, e
 		}
 		props.DatagramGuaranteedDelivery = cfg.DatagramGuaranteedDelivery
 	}
+	if cfg.AllowCrossRegionRouting != nil {
+		props.AllowCrossRegionRouting = cfg.AllowCrossRegionRouting
+	}
 	if strings.TrimSpace(cfg.Hostname) != "" {
 		hostname := strings.TrimSpace(cfg.Hostname)
 		props.Hostname = &hostname

@@ -63,6 +63,42 @@ spec:
                   resolution.
                 minLength: 1
                 type: string
+              controlPlaneHeaders:
+                description: ControlPlaneHeaders adds deployment-specific HTTP headers
+                  to Control plane requests. Values are read from Secrets and are
+                  never forwarded to engine endpoints.
+                items:
+                  description: ControlPlaneHeader references a secret value sent as
+                    an HTTP header to the Control plane.
+                  properties:
+                    name:
+                      description: Name is the HTTP header name.
+                      maxLength: 256
+                      minLength: 1
+                      type: string
+                    valueSecretRef:
+                      description: ValueSecretRef references the header value.
+                      properties:
+                        key:
+                          description: Key is the key within the Secret data map.
+                          minLength: 1
+                          type: string
+                        name:
+                          description: Name is the Secret name.
+                          minLength: 1
+                          type: string
+                      required:
+                      - key
+                      - name
+                      type: object
+                  required:
+                  - name
+                  - valueSecretRef
+                  type: object
+                type: array
+                x-kubernetes-list-map-keys:
+                - name
+                x-kubernetes-list-type: map
               engine:
                 description: Engine is the rstream engine address, for example engine.rstream.io:443.
                   Use this for self-hosted deployments without a Control plane.
@@ -132,6 +168,13 @@ spec:
                 description: ProjectID identifies the rstream project to resolve through
                   the Control plane when the endpoint is not known.
                 minLength: 1
+                type: string
+              region:
+                description: Region selects an authorized regional endpoint. When
+                  omitted or set to auto, global projects use their global endpoint
+                  and regional projects use their assigned region.
+                maxLength: 64
+                pattern: ^[A-Za-z0-9](?:[A-Za-z0-9._-]*[A-Za-z0-9])?$
                 type: string
               tokenSecretRef:
                 description: TokenSecretRef references the bearer token used by tunnel
@@ -270,6 +313,11 @@ spec:
                 1 : 0) + (has(self.engine) ? 1 : 0) == 1'
             - message: projectEndpoint and projectID require tokenSecretRef
               rule: has(self.engine) || has(self.tokenSecretRef)
+            - message: region cannot be used with an explicit engine
+              rule: '!has(self.engine) || !has(self.region)'
+            - message: controlPlaneHeaders cannot be used with an explicit engine
+              rule: '!has(self.engine) || !has(self.controlPlaneHeaders) || size(self.controlPlaneHeaders)
+                == 0'
           status:
             description: RstreamConnectionStatus defines the observed state of RstreamConnection.
             properties:
@@ -354,6 +402,10 @@ spec:
               projectID:
                 description: ProjectID is the resolved project ID when project lookup
                   is used.
+                type: string
+              region:
+                description: Region is the endpoint selection used for the last successful
+                  resolution.
                 type: string
             type: object
         type: object

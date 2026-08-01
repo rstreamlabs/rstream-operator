@@ -55,21 +55,26 @@ func TestRstreamConnectionReconcilerResolvesProjectEndpoint(t *testing.T) {
 		Spec: tunnelsv1alpha1.RstreamConnectionSpec{
 			ProjectEndpoint: "abc12345",
 			TokenSecretRef:  &tunnelsv1alpha1.SecretKeyRef{Name: "rstream-token", Key: "token"},
+			Region:          "us-east-1",
+			ControlPlaneHeaders: []tunnelsv1alpha1.ControlPlaneHeader{
+				{Name: "x-deployment-bypass", ValueSecretRef: tunnelsv1alpha1.SecretKeyRef{Name: "rstream-token", Key: "bypass"}},
+			},
 		},
 	}
 	secret := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{Name: "rstream-token", Namespace: "demo"},
-		Data:       map[string][]byte{"token": []byte("value")},
+		Data:       map[string][]byte{"token": []byte("value"), "bypass": []byte("secret")},
 	}
 	k8sClient := fake.NewClientBuilder().
 		WithScheme(scheme).
 		WithStatusSubresource(&tunnelsv1alpha1.RstreamTunnel{}, &tunnelsv1alpha1.RstreamConnection{}).
 		WithObjects(connection, secret).
 		Build()
+	resolver := &capturingConnectionResolver{resolution: connectionResolution{Engine: "abc12345.c.rstream.io:443", APIURL: defaultAPIURL, ProjectID: "project-id", ProjectEndpoint: "abc12345", Region: "us-east-1"}}
 	reconciler := &RstreamConnectionReconciler{
 		Client:             k8sClient,
 		Scheme:             scheme,
-		ConnectionResolver: fakeConnectionResolver{resolution: connectionResolution{Engine: "abc12345.c.rstream.io:443", APIURL: defaultAPIURL, ProjectID: "project-id", ProjectEndpoint: "abc12345"}},
+		ConnectionResolver: resolver,
 	}
 	_, err := reconciler.Reconcile(ctx, ctrl.Request{NamespacedName: types.NamespacedName{Namespace: "demo", Name: "default"}})
 	if err != nil {
@@ -85,6 +90,12 @@ func TestRstreamConnectionReconcilerResolvesProjectEndpoint(t *testing.T) {
 	if updated.Status.ProjectEndpoint != "abc12345" || updated.Status.ProjectID != "project-id" {
 		t.Fatalf("unexpected project status: %#v", updated.Status)
 	}
+	if updated.Status.Region != "us-east-1" {
+		t.Fatalf("status.region = %q", updated.Status.Region)
+	}
+	if resolver.token != "value" || resolver.headers["x-deployment-bypass"] != "secret" {
+		t.Fatalf("unexpected resolver credentials: token=%q headers=%#v", resolver.token, resolver.headers)
+	}
 }
 
 type fakeConnectionResolver struct {
@@ -92,6 +103,18 @@ type fakeConnectionResolver struct {
 	err        error
 }
 
-func (r fakeConnectionResolver) Resolve(context.Context, *tunnelsv1alpha1.RstreamConnection, string) (connectionResolution, error) {
+func (r fakeConnectionResolver) Resolve(context.Context, *tunnelsv1alpha1.RstreamConnection, string, map[string]string) (connectionResolution, error) {
 	return r.resolution, r.err
+}
+
+type capturingConnectionResolver struct {
+	resolution connectionResolution
+	token      string
+	headers    map[string]string
+}
+
+func (r *capturingConnectionResolver) Resolve(_ context.Context, _ *tunnelsv1alpha1.RstreamConnection, token string, headers map[string]string) (connectionResolution, error) {
+	r.token = token
+	r.headers = headers
+	return r.resolution, nil
 }
