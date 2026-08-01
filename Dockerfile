@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1.7
 # See LICENSE file in the project root for license information.
 
-FROM --platform=$BUILDPLATFORM golang:1.26.3-alpine AS builder
+FROM --platform=$BUILDPLATFORM golang:1.26.5-alpine AS builder
 
 ARG TARGETOS
 ARG TARGETARCH

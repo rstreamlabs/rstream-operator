@@ -49,7 +49,7 @@ build_image() {
       --exclude out \
       "${sdk_dir}/" "${SMOKE_TMP_DIR}/rstream-go/"
     cat > "${SMOKE_TMP_DIR}/Dockerfile" <<'DOCKERFILE'
-FROM --platform=$BUILDPLATFORM golang:1.26.3-alpine AS builder
+FROM --platform=$BUILDPLATFORM golang:1.26.5-alpine AS builder
 
 ARG TARGETOS
 ARG TARGETARCH
