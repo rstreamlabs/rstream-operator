@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.5.0](https://github.com/rstreamlabs/rstream-operator/compare/v0.4.0...v0.5.0) (2026-08-01)
+
+
+### Features
+
+* **edge:** release regional operator connections ([f060cb7](https://github.com/rstreamlabs/rstream-operator/commit/f060cb7b3ccaa9e901ef020622abe0a32b438a90))
+* **edge:** support regional operator connections ([9e9f488](https://github.com/rstreamlabs/rstream-operator/commit/9e9f488286f60571016de816dc7fd5a4200c6fb8))
+
+
+### Bug Fixes
+
+* **build:** align Go toolchain and routing fixture ([d01626f](https://github.com/rstreamlabs/rstream-operator/commit/d01626f6c33f671339c6cd7ee41b8be87f4d54bb))
+
 ## [0.4.0](https://github.com/rstreamlabs/rstream-operator/compare/v0.3.0...v0.4.0) (2026-07-18)
 
 
