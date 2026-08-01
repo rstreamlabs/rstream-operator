@@ -25,6 +25,8 @@ spec:
 | `projectEndpoint` | one of project endpoint, project ID, or engine | rstream project endpoint resolved through the Control plane. This is the preferred hosted path. |
 | `projectID` | one of project endpoint, project ID, or engine | rstream project ID resolved through the Control plane. Use it when the endpoint is not known. |
 | `apiURL` | no | Control plane URL used for project lookup. Defaults to `https://rstream.io`. |
+| `region` | no | Authorized regional endpoint selected for the agent control channel. Omit it or use `auto` for the project default. |
+| `controlPlaneHeaders` | no | Additional Control plane HTTP headers whose values come from Secret keys. |
 | `engine` | one of project endpoint, project ID, or engine | rstream engine address, usually `host:port`. Use it for self-hosted deployments without a Control plane. |
 | `tokenSecretRef` | one of token or mTLS | Secret key containing the bearer token. |
 | `mtls` | one of token or mTLS | Secret references for client certificate authentication. |
@@ -33,6 +35,34 @@ spec:
 Exactly one of `projectEndpoint`, `projectID`, or `engine` must be set. `projectEndpoint` and `projectID` require `tokenSecretRef` because the operator resolves the engine through the Control plane. Direct `engine` connections can use either token or mTLS authentication.
 
 `tokenSecretRef` and `mtls` are mutually exclusive.
+
+### Region selection
+
+A Global project uses its global endpoint when `region` is omitted or set to `auto`. Set an explicit region to keep the agent control channel on one of the regional endpoints authorized for the project:
+
+```yaml
+spec:
+  projectEndpoint: "<project-endpoint>"
+  region: us-east-1
+```
+
+Region selection cannot be combined with an explicit `engine` address.
+
+### Control plane headers
+
+Use Secret-backed headers when a private Control plane is protected by an access gateway:
+
+```yaml
+spec:
+  projectEndpoint: "<project-endpoint>"
+  controlPlaneHeaders:
+    - name: x-deployment-bypass
+      valueSecretRef:
+        name: rstream-control-plane
+        key: deployment-bypass
+```
+
+These headers are sent only while resolving the project through `apiURL`. They are never written to the agent ConfigMap or forwarded to an engine. Reserved authentication and forwarding headers are rejected by the SDK.
 
 ### Direct engine address
 
@@ -125,6 +155,7 @@ spec:
 | `protocol` | no | `http`, `tls`, `dtls`, `quic`, or `tcp`. Defaults to `http`. |
 | `type` | no | `bytestream` or `datagram`. Inferred when omitted. |
 | `datagramGuaranteedDelivery` | no | Requires reliable delivery for datagram tunnels. Defaults to `false`. |
+| `allowCrossRegionRouting` | no | Permits a cross-region payload path when ingress and tunnel owner are in different regions. Same-region traffic remains direct. |
 | `hostname` | no | Stable public hostname. Generated and persisted in status when omitted. |
 | `tcpPort` | no | Reserved public port requested by a published TCP tunnel. Omit it for an ephemeral port. |
 | `labels` | no | Labels added to the rstream tunnel inventory. |
@@ -146,6 +177,8 @@ The operator validates that the Service port protocol matches the tunnel data ty
 - `dtls` or `quic`: Service port must be UDP.
 
 Set `datagramGuaranteedDelivery: true` only on datagram tunnels. It disables unreliable datagram fast paths, including QUIC datagrams on the agent-to-engine leg, when packet loss is not acceptable.
+
+Set `allowCrossRegionRouting: true` only when the deployment policy permits a cross-region payload path. When omitted or false, the engine uses Direct routing. The setting applies to every supported tunnel protocol and does not force a cross-region path.
 
 ### Published TCP
 
@@ -215,6 +248,7 @@ agent:
 | `projectID` | Resolved project ID when lookup is used. |
 | `projectEndpoint` | Resolved project endpoint when lookup is used. |
 | `engine` | Engine address used by tunnel agents. |
+| `region` | Endpoint selection used for the last successful resolution. |
 
 `RstreamTunnel.status` includes:
 

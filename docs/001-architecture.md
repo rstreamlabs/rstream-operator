@@ -11,7 +11,7 @@ The manager runs controller-runtime controllers for:
 - `RstreamConnection`
 - `RstreamTunnel`
 
-It validates references, resolves hosted projects through the Control plane when needed, creates managed Kubernetes resources, and maintains status conditions.
+It validates references, resolves hosted projects and regional endpoints through the Control plane when needed, creates managed Kubernetes resources, and maintains status conditions. Secret-backed Control plane headers are used only by the manager during resolution. They are never written to an agent ConfigMap or sent to an engine.
 
 ### Agent
 
@@ -42,7 +42,7 @@ The resources have owner references pointing to the `RstreamTunnel`.
 flowchart TD
     A["RstreamTunnel changed"] --> B["Load RstreamConnection"]
     B --> C["Validate Secret references"]
-    C --> D["Resolve project to engine address when needed"]
+    C --> D["Resolve project and selected region when needed"]
     D --> E["Resolve Service and port"]
     E --> F["Build agent config"]
     F --> G["Create or update ConfigMap/RBAC/Deployment"]
@@ -75,5 +75,7 @@ Both may update `Ready`; the manager keeps it false while Kubernetes resources a
 If the engine disconnects, the agent marks `TunnelReady=False`, clears readiness, and retries with exponential backoff.
 
 If a Secret, Service, or Service port is missing, the manager keeps the agent resources from being updated and sets `Ready=False` with an actionable reason.
+
+If a requested region is not authorized for the project, project resolution fails closed and no agent configuration is changed. A direct `spec.engine` address cannot be combined with Control plane region selection or additional Control plane headers.
 
 If a `RstreamTunnel` is deleted, the finalizer deletes managed children before removing itself.

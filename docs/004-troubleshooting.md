@@ -41,7 +41,11 @@ Check:
 
 - `spec.apiURL` is reachable from the manager Pod. It defaults to `https://rstream.io`.
 - `tokenSecretRef` points to a token that can read the project.
+- `spec.region` is `auto` or a region authorized for the project.
+- every `controlPlaneHeaders.valueSecretRef` exists and contains the expected access-gateway value.
 - `kubectl describe rstreamconnection <name>` shows `Ready=True` and `status.engine`.
+
+`status.region` reports `auto` or the explicit region used by the last successful resolution. Access-gateway headers are manager-only credentials and must not appear in the generated agent ConfigMap.
 
 Self-hosted deployments without a Control plane should use `spec.engine` directly.
 

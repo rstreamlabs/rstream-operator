@@ -135,14 +135,19 @@ func (r *RstreamTunnelReconciler) resolveConnection(ctx context.Context, tunnel 
 	if len(refs) == 0 {
 		return resolvedConnection{}, fmt.Errorf("RstreamConnection %q must reference tokenSecretRef or mtls", key.Name)
 	}
-	versions := make([]string, 0, len(refs))
+	agentSecretNames := make(map[string]struct{})
+	for _, ref := range agentSecretRefs(&connection) {
+		agentSecretNames[ref.Name] = struct{}{}
+	}
+	versionsByName := make(map[string]string, len(agentSecretNames))
 	token := ""
+	headers := make(map[string]string, len(connection.Spec.ControlPlaneHeaders))
 	for _, ref := range refs {
 		var secret corev1.Secret
 		secretKey := types.NamespacedName{Namespace: connection.Namespace, Name: ref.Name}
 		if err := r.Get(ctx, secretKey, &secret); err != nil {
 			if apierrors.IsNotFound(err) {
-				return resolvedConnection{}, fmt.Errorf("Secret %q was not found", ref.Name)
+				return resolvedConnection{}, fmt.Errorf("secret %q was not found", ref.Name)
 			}
 			return resolvedConnection{}, err
 		}
@@ -152,10 +157,17 @@ func (r *RstreamTunnelReconciler) resolveConnection(ctx context.Context, tunnel 
 		if connection.Spec.TokenSecretRef != nil && ref.Name == connection.Spec.TokenSecretRef.Name && ref.Key == connection.Spec.TokenSecretRef.Key {
 			token = strings.TrimSpace(string(secret.Data[ref.Key]))
 		}
-		versions = append(versions, ref.Name+":"+secret.ResourceVersion)
+		addControlPlaneHeaders(headers, &connection, ref, string(secret.Data[ref.Key]))
+		if _, ok := agentSecretNames[ref.Name]; ok {
+			versionsByName[ref.Name] = secret.ResourceVersion
+		}
+	}
+	versions := make([]string, 0, len(versionsByName))
+	for name, version := range versionsByName {
+		versions = append(versions, name+":"+version)
 	}
 	sort.Strings(versions)
-	resolution, err := r.connectionResolver().Resolve(ctx, &connection, token)
+	resolution, err := r.connectionResolver().Resolve(ctx, &connection, token, headers)
 	if err != nil {
 		return resolvedConnection{}, err
 	}
@@ -174,7 +186,7 @@ func (r *RstreamTunnelReconciler) resolveTarget(ctx context.Context, tunnel *tun
 	key := types.NamespacedName{Namespace: serviceNamespace(tunnel), Name: tunnel.Spec.Target.Service.Name}
 	if err := r.Get(ctx, key, &svc); err != nil {
 		if apierrors.IsNotFound(err) {
-			return resources.ResolvedTarget{}, fmt.Errorf("Service %q was not found in namespace %q", key.Name, key.Namespace)
+			return resources.ResolvedTarget{}, fmt.Errorf("service %q was not found in namespace %q", key.Name, key.Namespace)
 		}
 		return resources.ResolvedTarget{}, err
 	}

@@ -128,3 +128,12 @@ func TestBuildAgentConfigMapsPublishedTCPPort(t *testing.T) {
 		t.Fatalf("Tunnel.Hostname = %q, want empty", cfg.Tunnel.Hostname)
 	}
 }
+
+func TestBuildAgentConfigMapsCrossRegionRouting(t *testing.T) {
+	allow := true
+	tunnel := &tunnelsv1alpha1.RstreamTunnel{Spec: tunnelsv1alpha1.RstreamTunnelSpec{Protocol: tunnelsv1alpha1.ProtocolHTTP, AllowCrossRegionRouting: &allow}}
+	cfg := BuildAgentConfig(tunnel, &tunnelsv1alpha1.RstreamConnection{}, ResolvedTarget{Host: "web.default.svc", Port: 8080, Protocol: corev1.ProtocolTCP}, "web.example.com", "engine.example.com:443")
+	if cfg.Tunnel.AllowCrossRegionRouting == nil || !*cfg.Tunnel.AllowCrossRegionRouting {
+		t.Fatalf("Tunnel.AllowCrossRegionRouting = %#v, want true", cfg.Tunnel.AllowCrossRegionRouting)
+	}
+}

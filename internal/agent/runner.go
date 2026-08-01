@@ -139,7 +139,7 @@ func serveTCP(listener net.Listener, target agentconfig.TargetConfig, logger *sl
 	for {
 		inbound, err := listener.Accept()
 		if err != nil {
-			if ne, ok := err.(net.Error); ok && ne.Temporary() {
+			if ne, ok := err.(net.Error); ok && ne.Timeout() {
 				time.Sleep(50 * time.Millisecond)
 				continue
 			}
@@ -168,7 +168,7 @@ func serveUDP(listener rstream.PacketListener, target agentconfig.TargetConfig, 
 	for {
 		inbound, remote, err := listener.Accept()
 		if err != nil {
-			if ne, ok := err.(net.Error); ok && ne.Temporary() {
+			if ne, ok := err.(net.Error); ok && ne.Timeout() {
 				time.Sleep(50 * time.Millisecond)
 				continue
 			}
