@@ -36,7 +36,7 @@ func TestDefaultConnectionResolverResolvesProjectID(t *testing.T) {
 		if got := r.Header.Get("x-deployment-bypass"); got != "secret" {
 			t.Fatalf("x-deployment-bypass = %q", got)
 		}
-		_, _ = w.Write([]byte(`{"id":"project/id","endpoint":"abc12345","domain":"global.example.com","enginePort":443,"regionalEndpoints":[{"provider":"aws","region":"us-east-1","domain":"us.example.com","enginePort":8443}]}`))
+		_, _ = w.Write([]byte(`{"id":"project/id","endpoint":"abc12345","routing":"global","domain":"global.example.com","enginePort":443,"regionalEndpoints":[{"provider":"aws","region":"us-east-1","domain":"us.example.com","enginePort":8443}]}`))
 	}))
 	defer server.Close()
 	connection := &tunnelsv1alpha1.RstreamConnection{
