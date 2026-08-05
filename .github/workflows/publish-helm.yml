@@ -1,0 +1,61 @@
+name: Publish Helm chart
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  publish:
+    if: ${{ github.actor == vars.CI_ALLOWED_ACTOR }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+        with:
+          persist-credentials: false
+      - name: Install Helm
+        shell: bash
+        env:
+          HELM_SHA256: 15e041a93a590dce8100f39385cd98c84a765c9e36aeeb9e2dc6ff9e4769e2e0
+          HELM_VERSION: 3.21.3
+        run: |
+          set -euo pipefail
+          archive="helm-v${HELM_VERSION}-linux-amd64.tar.gz"
+          curl --fail --location --output "${archive}" "https://get.helm.sh/${archive}"
+          printf '%s  %s\n' "${HELM_SHA256}" "${archive}" | sha256sum --check
+          tar -xzf "${archive}"
+          sudo install -m 0755 linux-amd64/helm /usr/local/bin/helm
+      - name: Validate chart
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="${GITHUB_REF_NAME#v}"
+          chart_version="$(helm show chart charts/rstream-operator | awk '$1 == "version:" { print $2 }')"
+          if [[ "${version}" != "${chart_version}" ]]; then
+            echo "Release tag ${GITHUB_REF_NAME} does not match chart version ${chart_version}." >&2
+            exit 1
+          fi
+          helm lint charts/rstream-operator
+      - name: Package chart
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          helm package charts/rstream-operator --destination dist
+      - name: Log in to GitHub Container Registry
+        shell: bash
+        env:
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          printf '%s' "${GHCR_TOKEN}" | helm registry login ghcr.io --username "${GITHUB_ACTOR}" --password-stdin
+      - name: Publish chart
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="${GITHUB_REF_NAME#v}"
+          helm push "dist/rstream-operator-${version}.tgz" oci://ghcr.io/rstreamlabs
