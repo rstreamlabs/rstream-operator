@@ -1,0 +1,44 @@
+name: Publish Artifact Hub metadata
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  publish:
+    if: ${{ github.actor == vars.CI_ALLOWED_ACTOR }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+        with:
+          persist-credentials: false
+      - name: Install ORAS
+        shell: bash
+        env:
+          ORAS_SHA256: 9ce999f8d2de03fc03968b29d743077a58783e545e5eaa53917ca177352d0e59
+          ORAS_VERSION: 1.3.3
+        run: |
+          set -euo pipefail
+          archive="oras_${ORAS_VERSION}_linux_amd64.tar.gz"
+          curl --fail --location --output "${archive}" "https://github.com/oras-project/oras/releases/download/v${ORAS_VERSION}/${archive}"
+          printf '%s  %s\n' "${ORAS_SHA256}" "${archive}" | sha256sum --check
+          tar -xzf "${archive}" oras
+          sudo install -m 0755 oras /usr/local/bin/oras
+      - name: Log in to GitHub Container Registry
+        shell: bash
+        env:
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          printf '%s' "${GHCR_TOKEN}" | oras login ghcr.io --username "${GITHUB_ACTOR}" --password-stdin
+      - name: Publish Artifact Hub repository metadata
+        shell: bash
+        run: |
+          set -euo pipefail
+          oras push \
+            ghcr.io/rstreamlabs/rstream-operator:artifacthub.io \
+            --config /dev/null:application/vnd.cncf.artifacthub.config.v1+yaml \
+            artifacthub-repo.yml:application/vnd.cncf.artifacthub.repository-metadata.layer.v1.yaml
