@@ -5,6 +5,10 @@ type: application
 version: 0.5.0
 appVersion: 0.5.0
 kubeVersion: '>=1.29.0-0'
+icon: https://rstream.io/images/brand/rstream-logo-square-dark.png
+annotations:
+  artifacthub.io/category: networking
+  artifacthub.io/license: Apache-2.0
 keywords:
   - rstream
   - tunnels
