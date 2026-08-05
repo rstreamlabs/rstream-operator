@@ -2,8 +2,8 @@ apiVersion: v2
 name: rstream-operator
 description: Kubernetes operator for managing rstream tunnels
 type: application
-version: 0.5.0
-appVersion: 0.5.0
+version: 0.5.1
+appVersion: 0.5.1
 kubeVersion: '>=1.29.0-0'
 icon: https://rstream.io/images/brand/rstream-logo-square-dark.png
 annotations:

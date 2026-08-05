@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.1](https://github.com/rstreamlabs/rstream-operator/compare/v0.5.0...v0.5.1) (2026-08-05)
+
+
+### Bug Fixes
+
+* **packaging:** publish Helm chart to OCI ([1076bc3](https://github.com/rstreamlabs/rstream-operator/commit/1076bc35412653a0c20926efd53cb4768df28e8a))
+
 ## [0.5.0](https://github.com/rstreamlabs/rstream-operator/compare/v0.4.0...v0.5.0) (2026-08-01)
 
 
