@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.2](https://github.com/rstreamlabs/rstream-operator/compare/v0.5.1...v0.5.2) (2026-08-12)
+
+
+### Bug Fixes
+
+* **packaging:** publish Artifact Hub metadata ([b925b56](https://github.com/rstreamlabs/rstream-operator/commit/b925b56469affae17404c29192003adaa125c3a2))
+
 ## [0.5.1](https://github.com/rstreamlabs/rstream-operator/compare/v0.5.0...v0.5.1) (2026-08-05)
 
 
