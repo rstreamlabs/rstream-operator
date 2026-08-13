@@ -11,6 +11,8 @@ IMAGE_TAG="${IMAGE_TAG:-runtime}"
 IMAGE="${IMAGE_REPOSITORY}:${IMAGE_TAG}"
 NAMESPACE="${NAMESPACE:-rstream-demo}"
 TIMEOUT="${TIMEOUT:-180s}"
+CONTROL_PLANE_HEADER_NAME="${RSTREAM_CONTROL_PLANE_HEADER_NAME:-}"
+CONTROL_PLANE_HEADER_VALUE="${RSTREAM_CONTROL_PLANE_HEADER_VALUE:-}"
 SMOKE_TMP_DIR=""
 
 if [[ -z "${RSTREAM_ENGINE:-}" && -z "${RSTREAM_PROJECT_ENDPOINT:-}" && -z "${RSTREAM_PROJECT_ID:-}" ]]; then
@@ -20,6 +22,15 @@ fi
 
 if [[ -z "${RSTREAM_TOKEN:-}" ]]; then
   echo "RSTREAM_TOKEN is required. Export a project token before running the smoke test." >&2
+  exit 2
+fi
+
+if [[ -n "${CONTROL_PLANE_HEADER_NAME}" && -z "${CONTROL_PLANE_HEADER_VALUE}" ]] || [[ -z "${CONTROL_PLANE_HEADER_NAME}" && -n "${CONTROL_PLANE_HEADER_VALUE}" ]]; then
+  echo "RSTREAM_CONTROL_PLANE_HEADER_NAME and RSTREAM_CONTROL_PLANE_HEADER_VALUE must be set together." >&2
+  exit 2
+fi
+if [[ -n "${CONTROL_PLANE_HEADER_NAME}" && ! "${CONTROL_PLANE_HEADER_NAME}" =~ ^[A-Za-z0-9-]+$ ]]; then
+  echo "RSTREAM_CONTROL_PLANE_HEADER_NAME is invalid." >&2
   exit 2
 fi
 
@@ -98,9 +109,19 @@ helm upgrade --install rstream-operator ./charts/rstream-operator \
 kubectl -n rstream-system rollout restart deployment/rstream-operator
 kubectl -n rstream-system rollout status deployment/rstream-operator --timeout="${TIMEOUT}"
 
-kubectl apply -f config/samples/http_server.yaml
+"${ROOT_DIR}/hack/render-runtime-smoke-sample.sh" "${NAMESPACE}" | kubectl apply -f -
+secret_args=("--from-literal=token=${RSTREAM_TOKEN}")
+control_plane_headers=""
+if [[ -n "${CONTROL_PLANE_HEADER_NAME}" ]]; then
+  secret_args+=("--from-literal=control-plane-header=${CONTROL_PLANE_HEADER_VALUE}")
+  control_plane_headers="  controlPlaneHeaders:
+    - name: ${CONTROL_PLANE_HEADER_NAME}
+      valueSecretRef:
+        name: rstream-credentials
+        key: control-plane-header"
+fi
 kubectl -n "${NAMESPACE}" create secret generic rstream-credentials \
-  --from-literal=token="${RSTREAM_TOKEN}" \
+  "${secret_args[@]}" \
   --dry-run=client -o yaml | kubectl apply -f -
 
 connection_selector=""
@@ -128,6 +149,7 @@ metadata:
   namespace: ${NAMESPACE}
 spec:
 ${connection_selector}
+${control_plane_headers}
   tokenSecretRef:
     name: rstream-credentials
     key: token

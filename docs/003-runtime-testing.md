@@ -25,7 +25,16 @@ export RSTREAM_TOKEN=...
 hack/runtime-smoke.sh
 ```
 
-Set `RSTREAM_API_URL` when testing a staging Control plane. Set `RSTREAM_ENGINE` instead of `RSTREAM_PROJECT_ENDPOINT` when the target is self-hosted or otherwise has no Control plane.
+Set `RSTREAM_API_URL` when testing a staging Control plane. If that Control
+plane is protected by one deployment-specific HTTP header, set
+`RSTREAM_CONTROL_PLANE_HEADER_NAME` and `RSTREAM_CONTROL_PLANE_HEADER_VALUE`
+together; the script stores the value in the Kubernetes credential Secret and
+references it through `spec.controlPlaneHeaders`. The header is used only for
+Control plane resolution and is never forwarded to the Engine. Set
+`RSTREAM_ENGINE` instead of `RSTREAM_PROJECT_ENDPOINT` when the target is
+self-hosted or otherwise has no Control plane. `NAMESPACE` may select an
+isolated smoke-test namespace; the rendered sample and every generated object
+use that exact validated namespace.
 
 The script:
 

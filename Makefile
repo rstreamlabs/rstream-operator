@@ -63,8 +63,14 @@ vet:
 	go vet ./...
 
 .PHONY: test
-test: manifests helm-crds generate fmt vet envtest
+test: manifests helm-crds generate fmt vet test-scripts envtest
 	KUBEBUILDER_ASSETS="$$( $(ENVTEST) use $(ENVTEST_K8S_VERSION) --bin-dir $(LOCALBIN) -p path )" go test ./...
+
+.PHONY: test-scripts
+test-scripts:
+	bash -n hack/*.sh
+	hack/render-runtime-smoke-sample_test.sh
+	hack/runtime-smoke_preflight_test.sh
 
 .PHONY: build
 build: generate fmt vet
