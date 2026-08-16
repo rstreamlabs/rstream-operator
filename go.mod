@@ -3,7 +3,7 @@ module github.com/rstreamlabs/rstream-operator
 go 1.26.5
 
 require (
-	github.com/rstreamlabs/rstream-go v1.28.1
+	github.com/rstreamlabs/rstream-go v1.28.2
 	gopkg.in/yaml.v3 v3.0.1
 	k8s.io/api v0.36.3
 	k8s.io/apimachinery v0.36.3
