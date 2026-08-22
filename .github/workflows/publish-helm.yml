@@ -1,4 +1,4 @@
-name: Publish Helm chart
+name: Build release candidate
 
 on:
   push:
@@ -7,13 +7,30 @@ on:
 
 permissions:
   contents: read
-  packages: write
+
+concurrency:
+  group: release-candidate-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  RELEASE_DOCKER_PLATFORMS: linux/386,linux/amd64,linux/amd64/v2,linux/ppc64le,linux/arm/v7,linux/arm/v6,linux/arm64
 
 jobs:
-  publish:
+  build:
+    name: Build chart and image candidate
     if: ${{ github.actor == vars.CI_ALLOWED_ACTOR }}
     runs-on: ubuntu-latest
     steps:
+      - name: Validate release tag
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="${GITHUB_REF_NAME#v}"
+          if [[ ! "$version" =~ ^[0-9]+(\.[0-9]+){2}$ ]]; then
+            echo "invalid release version: ${version}" >&2
+            exit 1
+          fi
+          printf 'VERSION=%s\n' "$version" >> "$GITHUB_ENV"
       - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
         with:
           persist-credentials: false
@@ -25,37 +42,41 @@ jobs:
         run: |
           set -euo pipefail
           archive="helm-v${HELM_VERSION}-linux-amd64.tar.gz"
-          curl --fail --location --output "${archive}" "https://get.helm.sh/${archive}"
-          printf '%s  %s\n' "${HELM_SHA256}" "${archive}" | sha256sum --check
-          tar -xzf "${archive}"
+          curl --fail --location --output "$archive" "https://get.helm.sh/${archive}"
+          printf '%s  %s\n' "$HELM_SHA256" "$archive" | sha256sum --check
+          tar -xzf "$archive"
           sudo install -m 0755 linux-amd64/helm /usr/local/bin/helm
-      - name: Validate chart
+      - uses: docker/setup-qemu-action@c7c53464625b32c7a7e944ae62b3e17d2b600130 # v3
+      - uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd # v4
+      - name: Build release candidate
         shell: bash
         run: |
           set -euo pipefail
-          version="${GITHUB_REF_NAME#v}"
-          chart_version="$(helm show chart charts/rstream-operator | awk '$1 == "version:" { print $2 }')"
-          if [[ "${version}" != "${chart_version}" ]]; then
-            echo "Release tag ${GITHUB_REF_NAME} does not match chart version ${chart_version}." >&2
+          chart_version=$(helm show chart charts/rstream-operator | awk '$1 == "version:" { print $2 }')
+          app_version=$(helm show chart charts/rstream-operator | awk '$1 == "appVersion:" { print $2 }')
+          if [[ "$VERSION" == "$chart_version" && "$VERSION" == "$app_version" ]]; then
+            :
+          else
+            echo "tag ${VERSION}, chart ${chart_version}, and app ${app_version} versions must match" >&2
             exit 1
           fi
+          candidate_directory="${PWD}/out/release-candidate/${VERSION}"
+          mkdir -p "$candidate_directory"
           helm lint charts/rstream-operator
-      - name: Package chart
-        shell: bash
-        run: |
-          set -euo pipefail
-          mkdir -p dist
-          helm package charts/rstream-operator --destination dist
-      - name: Log in to GitHub Container Registry
-        shell: bash
-        env:
-          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          set -euo pipefail
-          printf '%s' "${GHCR_TOKEN}" | helm registry login ghcr.io --username "${GITHUB_ACTOR}" --password-stdin
-      - name: Publish chart
-        shell: bash
-        run: |
-          set -euo pipefail
-          version="${GITHUB_REF_NAME#v}"
-          helm push "dist/rstream-operator-${version}.tgz" oci://ghcr.io/rstreamlabs
+          helm package charts/rstream-operator --destination "$candidate_directory"
+          docker buildx build \
+            --platform "$RELEASE_DOCKER_PLATFORMS" \
+            --tag "docker.io/rstream/rstream-operator:${VERSION}" \
+            --output "type=oci,dest=${candidate_directory}/rstream-operator-${VERSION}.oci.tar" \
+            .
+          archive="release-candidate-${VERSION}.tar.gz"
+          ./.github/scripts/create-release-candidate.sh "$VERSION" "$archive"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: release-candidate-${{ env.VERSION }}
+          path: |
+            release-candidate-${{ env.VERSION }}.tar.gz
+            release-candidate-${{ env.VERSION }}.tar.gz.sha256
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 90
