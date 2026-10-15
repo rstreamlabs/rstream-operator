@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/rstreamlabs/rstream-go/httpcors"
 	tunnelsv1alpha1 "github.com/rstreamlabs/rstream-operator/api/v1alpha1"
 	"github.com/rstreamlabs/rstream-operator/internal/agentconfig"
 	"gopkg.in/yaml.v3"
@@ -142,6 +143,10 @@ func httpConfig(spec *tunnelsv1alpha1.HTTPSpec) *agentconfig.HTTPConfig {
 		return nil
 	}
 	out := &agentconfig.HTTPConfig{Version: string(spec.Version)}
+	if spec.CORS != nil {
+		cors := spec.CORS.DeepCopy()
+		out.CORS = &httpcors.Config{AllowedOrigins: cors.AllowedOrigins, AllowedMethods: cors.AllowedMethods, AllowedHeaders: cors.AllowedHeaders, ExposedHeaders: cors.ExposedHeaders, AllowCredentials: cors.AllowCredentials, MaxAge: cors.MaxAge}
+	}
 	if out.Version == "" {
 		out.Version = string(tunnelsv1alpha1.HTTPVersion11)
 	}

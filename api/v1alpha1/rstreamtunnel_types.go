@@ -15,6 +15,7 @@ import (
 // +kubebuilder:validation:XValidation:rule="self.protocol != 'tcp' || !has(self.type) || self.type == 'bytestream'",message="protocol tcp requires tunnel type bytestream"
 // +kubebuilder:validation:XValidation:rule="self.protocol != 'tcp' || !has(self.hostname)",message="protocol tcp does not support hostname"
 // +kubebuilder:validation:XValidation:rule="self.protocol != 'tcp' || (!has(self.http) && !has(self.tls))",message="protocol tcp does not support HTTP or TLS settings"
+// +kubebuilder:validation:XValidation:rule="!has(self.http) || !has(self.http.cors) || (self.protocol == 'http' && (!has(self.publish) || self.publish))",message="CORS requires a published HTTP tunnel"
 type RstreamTunnelSpec struct {
 	// ConnectionRef references the rstream connection settings in this namespace.
 	// Defaults to a RstreamConnection named default.
@@ -93,6 +94,9 @@ type ServiceTarget struct {
 
 // HTTPSpec configures HTTP tunnel behavior.
 type HTTPSpec struct {
+	// CORS enables browser access from explicit HTTP(S) origins.
+	// +optional
+	CORS *HTTPCORSSpec `json:"cors,omitempty"`
 	// Version selects the HTTP version exposed by the rstream edge.
 	// +kubebuilder:default:=http/1.1
 	// +optional
@@ -103,6 +107,34 @@ type HTTPSpec struct {
 	// Gate configures browser challenge behavior.
 	// +optional
 	Gate *HTTPGateSpec `json:"gate,omitempty"`
+}
+
+// HTTPCORSSpec configures browser access without changing edge authentication.
+type HTTPCORSSpec struct {
+	// AllowedOrigins lists explicit HTTP(S) origins, without paths or wildcards.
+	// +kubebuilder:validation:MinItems=1
+	// +kubebuilder:validation:MaxItems=128
+	AllowedOrigins []string `json:"allowedOrigins"`
+	// AllowedMethods defaults to GET, HEAD and POST.
+	// +kubebuilder:validation:MaxItems=128
+	// +optional
+	AllowedMethods []string `json:"allowedMethods,omitempty"`
+	// AllowedHeaders defaults to Authorization and Content-Type.
+	// +kubebuilder:validation:MaxItems=128
+	// +optional
+	AllowedHeaders []string `json:"allowedHeaders,omitempty"`
+	// ExposedHeaders lists response headers made available to browser scripts.
+	// +kubebuilder:validation:MaxItems=128
+	// +optional
+	ExposedHeaders []string `json:"exposedHeaders,omitempty"`
+	// AllowCredentials permits browser-managed credentials for the listed origins.
+	// +optional
+	AllowCredentials bool `json:"allowCredentials,omitempty"`
+	// MaxAge is the preflight cache lifetime in seconds; zero disables caching.
+	// +kubebuilder:validation:Minimum=0
+	// +kubebuilder:validation:Maximum=86400
+	// +optional
+	MaxAge int64 `json:"maxAge,omitempty"`
 }
 
 // HTTPAuthSpec configures HTTP edge authentication.
