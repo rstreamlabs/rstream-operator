@@ -289,4 +289,4 @@ http:
     maxAge: 600
 ```
 
-CORS requires a published HTTP tunnel and at least one explicit HTTP(S) origin without paths or wildcards. Each list accepts at most 128 entries; Engine limits all strings together to 16 KiB. `maxAge` is 0–86400 seconds. Omitted methods default to GET/HEAD/POST; omitted request headers default to Authorization/Content-Type. An absent policy leaves upstream CORS unchanged. Actual requests retain edge authentication; preflights cannot access the upstream. Roll out the Engine supporting protocol 1.4.6 before agents using this option.
+CORS requires a published HTTP tunnel and at least one explicit HTTP(S) origin without paths or wildcards. Each list accepts at most 128 entries; Engine limits all strings together to 16 KiB. `maxAge` is 0–86400 seconds. Omitted methods default to GET/HEAD/POST; omitted request headers default to Authorization/Content-Type. An absent policy leaves upstream CORS unchanged. Actual requests retain edge authentication; preflights cannot access the upstream.
