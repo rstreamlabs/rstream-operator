@@ -1168,6 +1168,52 @@ spec:
                         description: Token enables token authentication at the edge.
                         type: boolean
                     type: object
+                  cors:
+                    description: CORS enables browser access from explicit HTTP(S)
+                      origins.
+                    properties:
+                      allowCredentials:
+                        description: AllowCredentials permits browser-managed credentials
+                          for the listed origins.
+                        type: boolean
+                      allowedHeaders:
+                        description: AllowedHeaders defaults to Authorization and
+                          Content-Type.
+                        items:
+                          type: string
+                        maxItems: 128
+                        type: array
+                      allowedMethods:
+                        description: AllowedMethods defaults to GET, HEAD and POST.
+                        items:
+                          type: string
+                        maxItems: 128
+                        type: array
+                      allowedOrigins:
+                        description: AllowedOrigins lists explicit HTTP(S) origins,
+                          without paths or wildcards.
+                        items:
+                          type: string
+                        maxItems: 128
+                        minItems: 1
+                        type: array
+                      exposedHeaders:
+                        description: ExposedHeaders lists response headers made available
+                          to browser scripts.
+                        items:
+                          type: string
+                        maxItems: 128
+                        type: array
+                      maxAge:
+                        description: MaxAge is the preflight cache lifetime in seconds;
+                          zero disables caching.
+                        format: int64
+                        maximum: 86400
+                        minimum: 0
+                        type: integer
+                    required:
+                    - allowedOrigins
+                    type: object
                   gate:
                     description: Gate configures browser challenge behavior.
                     properties:
@@ -1301,6 +1347,9 @@ spec:
               rule: self.protocol != 'tcp' || !has(self.hostname)
             - message: protocol tcp does not support HTTP or TLS settings
               rule: self.protocol != 'tcp' || (!has(self.http) && !has(self.tls))
+            - message: CORS requires a published HTTP tunnel
+              rule: '!has(self.http) || !has(self.http.cors) || (self.protocol ==
+                ''http'' && (!has(self.publish) || self.publish))'
           status:
             description: RstreamTunnelStatus defines the observed state of RstreamTunnel.
             properties:

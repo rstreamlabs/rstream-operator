@@ -137,3 +137,15 @@ func TestBuildAgentConfigMapsCrossRegionRouting(t *testing.T) {
 		t.Fatalf("Tunnel.AllowCrossRegionRouting = %#v, want true", cfg.Tunnel.AllowCrossRegionRouting)
 	}
 }
+
+func TestHTTPCORSConfigPreservesPolicyAndOwnership(t *testing.T) {
+	spec := &tunnelsv1alpha1.HTTPSpec{CORS: &tunnelsv1alpha1.HTTPCORSSpec{AllowedOrigins: []string{"https://dashboard.example"}, AllowedMethods: []string{"GET", "PUT"}, AllowedHeaders: []string{"Authorization"}, ExposedHeaders: []string{"ETag"}, AllowCredentials: true, MaxAge: 600}}
+	config := httpConfig(spec)
+	if config.CORS == nil || config.CORS.MaxAge != 600 || !config.CORS.AllowCredentials || len(config.CORS.AllowedMethods) != 2 || len(config.CORS.AllowedHeaders) != 1 || len(config.CORS.ExposedHeaders) != 1 {
+		t.Fatalf("CORS mapping: %+v", config.CORS)
+	}
+	config.CORS.AllowedOrigins[0] = "https://changed.example"
+	if spec.CORS.AllowedOrigins[0] != "https://dashboard.example" {
+		t.Fatal("agent configuration shares API policy storage")
+	}
+}

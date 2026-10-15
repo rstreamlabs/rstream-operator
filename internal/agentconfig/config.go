@@ -2,6 +2,8 @@
 
 package agentconfig
 
+import "github.com/rstreamlabs/rstream-go/httpcors"
+
 // Config is the non-secret configuration consumed by rstream-agent.
 type Config struct {
 	Connection ConnectionConfig `yaml:"connection"`
@@ -71,9 +73,10 @@ type TunnelConfig struct {
 }
 
 type HTTPConfig struct {
-	Version string          `yaml:"version,omitempty"`
-	Auth    *HTTPAuthConfig `yaml:"auth,omitempty"`
-	Gate    *HTTPGateConfig `yaml:"gate,omitempty"`
+	CORS    *httpcors.Config `yaml:"cors,omitempty"`
+	Version string           `yaml:"version,omitempty"`
+	Auth    *HTTPAuthConfig  `yaml:"auth,omitempty"`
+	Gate    *HTTPGateConfig  `yaml:"gate,omitempty"`
 }
 
 type HTTPAuthConfig struct {

@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/rstreamlabs/rstream-go"
+	"github.com/rstreamlabs/rstream-go/httpcors"
 	"github.com/rstreamlabs/rstream-operator/internal/agentconfig"
 )
 
@@ -90,6 +91,16 @@ func TunnelProperties(cfg agentconfig.TunnelConfig) (rstream.TunnelProperties, e
 		}
 	}
 	if cfg.HTTP != nil {
+		if cfg.HTTP.CORS != nil {
+			if props.Publish != nil && !*props.Publish {
+				return props, fmt.Errorf("CORS requires a published HTTP tunnel")
+			}
+			var err error
+			props.HTTPCORS, err = httpcors.Normalize(cfg.HTTP.CORS)
+			if err != nil {
+				return props, err
+			}
+		}
 		if props.Protocol != nil && *props.Protocol != rstream.ProtocolHTTP {
 			return props, fmt.Errorf("http settings require protocol %q", rstream.ProtocolHTTP)
 		}

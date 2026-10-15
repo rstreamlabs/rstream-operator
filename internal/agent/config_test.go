@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/rstreamlabs/rstream-go"
+	"github.com/rstreamlabs/rstream-go/httpcors"
 	"github.com/rstreamlabs/rstream-operator/internal/agentconfig"
 )
 
@@ -154,5 +155,22 @@ func TestTransportRejectsInvalidMode(t *testing.T) {
 	_, err := transport(&agentconfig.TransportConfig{Mode: "sctp"})
 	if err == nil || !strings.Contains(err.Error(), "invalid tunnel transport") {
 		t.Fatalf("transport() error = %v, want invalid tunnel transport", err)
+	}
+}
+
+func TestHTTPCORSTunnelProperties(t *testing.T) {
+	config := agentconfig.TunnelConfig{Name: "test", Protocol: "http", HTTP: &agentconfig.HTTPConfig{CORS: &httpcors.Config{AllowedOrigins: []string{"https://dashboard.example"}}}}
+	props, err := TunnelProperties(config)
+	if err != nil || props.HTTPCORS == nil || len(props.HTTPCORS.AllowedMethods) != 3 {
+		t.Fatalf("CORS mapping: %+v, %v", props.HTTPCORS, err)
+	}
+	config.Publish = rstream.BoolPtr(false)
+	if _, err := TunnelProperties(config); err == nil {
+		t.Fatal("private CORS accepted")
+	}
+	config.Publish = nil
+	config.HTTP.CORS.AllowedOrigins = []string{"*"}
+	if _, err := TunnelProperties(config); err == nil {
+		t.Fatal("wildcard CORS accepted")
 	}
 }
