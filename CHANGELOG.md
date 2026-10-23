@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.1](https://github.com/rstreamlabs/rstream-operator/compare/v0.6.0...v0.6.1) (2026-10-23)
+
+
+### Bug Fixes
+
+* **release:** find draft candidates through the release listing ([#27](https://github.com/rstreamlabs/rstream-operator/issues/27)) ([c10bdc3](https://github.com/rstreamlabs/rstream-operator/commit/c10bdc3f1b57dba12dcb52fb8b19e6cb53f111f4))
+
 ## [0.6.0](https://github.com/rstreamlabs/rstream-operator/compare/v0.5.2...v0.6.0) (2026-10-23)
 
 
