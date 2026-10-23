@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.6.0](https://github.com/rstreamlabs/rstream-operator/compare/v0.5.2...v0.6.0) (2026-10-23)
+
+
+### Features
+
+* **http:** configure tunnel CORS in operator resources ([#23](https://github.com/rstreamlabs/rstream-operator/issues/23)) ([057f7ab](https://github.com/rstreamlabs/rstream-operator/commit/057f7abdebfa7d33d1158e6e9de94c4e836afdf9))
+
+
+### Bug Fixes
+
+* adopt SDK address fallback and DNS family fixes ([2ef5c61](https://github.com/rstreamlabs/rstream-operator/commit/2ef5c61c56acfe9c4ab40eda297b6241c6974b03))
+* adopt SDK address fallback and DNS family fixes ([44cb5a7](https://github.com/rstreamlabs/rstream-operator/commit/44cb5a7b86e57d2d34cc136da1b484a96ff06f9b))
+
 ## [0.5.2](https://github.com/rstreamlabs/rstream-operator/compare/v0.5.1...v0.5.2) (2026-08-12)
 
 
