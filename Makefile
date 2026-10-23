@@ -68,9 +68,10 @@ test: manifests helm-crds generate fmt vet test-scripts envtest
 
 .PHONY: test-scripts
 test-scripts:
-	bash -n hack/*.sh
+	bash -n hack/*.sh .github/scripts/*.sh
 	hack/render-runtime-smoke-sample_test.sh
 	hack/runtime-smoke_preflight_test.sh
+	hack/release-draft-lookup_test.sh
 
 .PHONY: build
 build: generate fmt vet
