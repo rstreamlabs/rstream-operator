@@ -24,6 +24,12 @@ jobs:
     environment: stable-release
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout trusted promotion policy
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          path: .promotion-policy
+          persist-credentials: false
       - name: Find matching release candidate
         id: release
         shell: bash
@@ -36,7 +42,11 @@ jobs:
             echo "invalid release tag: ${RELEASE_TAG}" >&2
             exit 1
           fi
-          if [[ "$(gh api "repos/${GITHUB_REPOSITORY}/releases/tags/${RELEASE_TAG}" --jq '.draft')" != true ]]; then
+          release=$(
+            gh api "repos/${GITHUB_REPOSITORY}/releases?per_page=100" --paginate |
+              ./.promotion-policy/.github/scripts/select-release-by-tag.sh "$RELEASE_TAG"
+          )
+          if [[ "$(jq -r '.draft' <<<"$release")" != true ]]; then
             echo "GitHub release ${RELEASE_TAG} must still be a draft" >&2
             exit 1
           fi
