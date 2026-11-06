@@ -33,7 +33,7 @@ func TestTunnelPropertiesMapsHTTPAuth(t *testing.T) {
 				Rstream: &rstreamAuth,
 			},
 		},
-	})
+	}, "")
 	if err != nil {
 		t.Fatalf("TunnelProperties() error = %v", err)
 	}
@@ -55,7 +55,7 @@ func TestTunnelPropertiesMapsDatagramGuaranteedDelivery(t *testing.T) {
 		Type:                       "datagram",
 		Protocol:                   "quic",
 		DatagramGuaranteedDelivery: &guaranteedDelivery,
-	})
+	}, "")
 	if err != nil {
 		t.Fatalf("TunnelProperties() error = %v", err)
 	}
@@ -66,7 +66,7 @@ func TestTunnelPropertiesMapsDatagramGuaranteedDelivery(t *testing.T) {
 
 func TestTunnelPropertiesMapsCrossRegionRoutingForHTTP(t *testing.T) {
 	allow := true
-	props, err := TunnelProperties(agentconfig.TunnelConfig{Name: "web", Protocol: "http", AllowCrossRegionRouting: &allow})
+	props, err := TunnelProperties(agentconfig.TunnelConfig{Name: "web", Protocol: "http", AllowCrossRegionRouting: &allow}, "")
 	if err != nil {
 		t.Fatalf("TunnelProperties() error = %v", err)
 	}
@@ -81,7 +81,7 @@ func TestTunnelPropertiesRejectsDatagramGuaranteedDeliveryForBytestream(t *testi
 		Name:                       "web",
 		Type:                       "bytestream",
 		DatagramGuaranteedDelivery: &guaranteedDelivery,
-	})
+	}, "")
 	if err == nil || !strings.Contains(err.Error(), "requires tunnel type") {
 		t.Fatalf("TunnelProperties() error = %v, want type error", err)
 	}
@@ -89,7 +89,7 @@ func TestTunnelPropertiesRejectsDatagramGuaranteedDeliveryForBytestream(t *testi
 
 func TestTunnelPropertiesMapsPublishedTCP(t *testing.T) {
 	port := uint32(10042)
-	props, err := TunnelProperties(agentconfig.TunnelConfig{Name: "ssh", Protocol: "tcp", TCPPort: &port})
+	props, err := TunnelProperties(agentconfig.TunnelConfig{Name: "ssh", Protocol: "tcp", TCPPort: &port}, "")
 	if err != nil {
 		t.Fatalf("TunnelProperties() error = %v", err)
 	}
@@ -120,7 +120,7 @@ func TestTunnelPropertiesRejectsInvalidPublishedTCPSettings(t *testing.T) {
 		{name: "hostname", cfg: agentconfig.TunnelConfig{Name: "ssh", Protocol: "tcp", Hostname: "ssh.example.com"}, want: "does not support"},
 	} {
 		t.Run(test.name, func(t *testing.T) {
-			_, err := TunnelProperties(test.cfg)
+			_, err := TunnelProperties(test.cfg, "")
 			if err == nil || !strings.Contains(err.Error(), test.want) {
 				t.Fatalf("TunnelProperties() error = %v, want %q", err, test.want)
 			}
@@ -160,17 +160,43 @@ func TestTransportRejectsInvalidMode(t *testing.T) {
 
 func TestHTTPCORSTunnelProperties(t *testing.T) {
 	config := agentconfig.TunnelConfig{Name: "test", Protocol: "http", HTTP: &agentconfig.HTTPConfig{CORS: &httpcors.Config{AllowedOrigins: []string{"https://dashboard.example"}}}}
-	props, err := TunnelProperties(config)
+	props, err := TunnelProperties(config, "")
 	if err != nil || props.HTTPCORS == nil || len(props.HTTPCORS.AllowedMethods) != 3 {
 		t.Fatalf("CORS mapping: %+v, %v", props.HTTPCORS, err)
 	}
 	config.Publish = rstream.BoolPtr(false)
-	if _, err := TunnelProperties(config); err == nil {
+	if _, err := TunnelProperties(config, ""); err == nil {
 		t.Fatal("private CORS accepted")
 	}
 	config.Publish = nil
 	config.HTTP.CORS.AllowedOrigins = []string{"*"}
-	if _, err := TunnelProperties(config); err == nil {
+	if _, err := TunnelProperties(config, ""); err == nil {
 		t.Fatal("wildcard CORS accepted")
+	}
+}
+
+func TestTunnelPropertiesReuseConfirmedHostname(t *testing.T) {
+	const saved = "web.t.public.example"
+	private := false
+	for _, tt := range []struct {
+		name string
+		cfg  agentconfig.TunnelConfig
+		want string
+	}{
+		{"published HTTP", agentconfig.TunnelConfig{Name: "web", Protocol: "http"}, saved},
+		{"published TLS", agentconfig.TunnelConfig{Name: "tls", Protocol: "tls"}, saved},
+		{"requested hostname", agentconfig.TunnelConfig{Name: "web", Protocol: "http", Hostname: "explicit.example"}, "explicit.example"},
+		{"private", agentconfig.TunnelConfig{Name: "private", Protocol: "http", Publish: &private}, ""},
+		{"published TCP", agentconfig.TunnelConfig{Name: "port", Protocol: "tcp"}, ""},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			props, err := TunnelProperties(tt.cfg, saved)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if got := stringPtrValue(props.Hostname); got != tt.want {
+				t.Errorf("hostname = %q, want %q", got, tt.want)
+			}
+		})
 	}
 }

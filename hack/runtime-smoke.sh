@@ -180,4 +180,15 @@ fi
 
 curl --fail --silent --show-error --retry 5 --retry-delay 2 "${forwarding_address}" >/dev/null
 
+agent_deployment="$(kubectl -n "${NAMESPACE}" get rstreamtunnel web -o jsonpath='{.status.agentDeployment}')"
+kubectl -n "${NAMESPACE}" rollout restart "deployment/${agent_deployment}"
+kubectl -n "${NAMESPACE}" rollout status "deployment/${agent_deployment}" --timeout="${TIMEOUT}"
+kubectl -n "${NAMESPACE}" wait rstreamtunnel/web --for=condition=Ready --timeout="${TIMEOUT}"
+restored_address="$(kubectl -n "${NAMESPACE}" get rstreamtunnel web -o jsonpath='{.status.forwardingAddress}')"
+if [[ "${restored_address}" != "${forwarding_address}" ]]; then
+  echo "Published tunnel address changed after the agent restart" >&2
+  exit 1
+fi
+curl --fail --silent --show-error --retry 5 --retry-delay 2 "${restored_address}" >/dev/null
+
 echo "Runtime smoke test passed: ${forwarding_address}"

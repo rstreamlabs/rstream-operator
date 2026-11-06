@@ -74,14 +74,15 @@ func TestTunnelReconcilerCreatesAgentResources(t *testing.T) {
 		AgentImage:         "example.com/rstream-operator:test",
 		ConnectionResolver: fakeConnectionResolver{resolution: connectionResolution{Engine: "abc12345.c.example.com:443", APIURL: defaultAPIURL, ProjectID: "project-id", ProjectEndpoint: "abc12345"}},
 	}
-	result, err := reconciler.Reconcile(ctx, ctrl.Request{NamespacedName: types.NamespacedName{Namespace: "demo", Name: "web"}})
+	req := ctrl.Request{NamespacedName: types.NamespacedName{Namespace: "demo", Name: "web"}}
+	result, err := reconciler.Reconcile(ctx, req)
 	if err != nil {
 		t.Fatalf("first Reconcile() error = %v", err)
 	}
 	if !result.IsZero() {
 		t.Fatalf("first Reconcile() result = %#v, want zero", result)
 	}
-	result, err = reconciler.Reconcile(ctx, ctrl.Request{NamespacedName: types.NamespacedName{Namespace: "demo", Name: "web"}})
+	result, err = reconciler.Reconcile(ctx, req)
 	if err != nil {
 		t.Fatalf("second Reconcile() error = %v", err)
 	}
@@ -116,8 +117,26 @@ func TestTunnelReconcilerCreatesAgentResources(t *testing.T) {
 	if updated.Status.Target != "web.demo.svc:8080" {
 		t.Fatalf("status.target = %q", updated.Status.Target)
 	}
-	if updated.Status.Hostname == "" {
-		t.Fatalf("status.hostname should contain generated stable hostname")
+	if updated.Status.Hostname != "" {
+		t.Fatalf("hostname before the first connection = %q, want empty", updated.Status.Hostname)
+	}
+	// Learning the serving hostname must not change the workload configuration
+	// and restart the agent that just established the tunnel.
+	beforeHash := dep.Spec.Template.Annotations[resources.AnnotationConfigHash]
+	updated.Status.Hostname = "web.t.public.example"
+	updated.Status.ForwardingAddress = "https://web.t.public.example"
+	updated.Status.TunnelID = "first"
+	if err := k8sClient.Status().Update(ctx, &updated); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := reconciler.Reconcile(ctx, req); err != nil {
+		t.Fatal(err)
+	}
+	if err := k8sClient.Get(ctx, types.NamespacedName{Namespace: "demo", Name: names.Deployment}, &dep); err != nil {
+		t.Fatal(err)
+	}
+	if hash := dep.Spec.Template.Annotations[resources.AnnotationConfigHash]; hash == "" || hash != beforeHash {
+		t.Fatalf("workload hash changed after connection: %q -> %q", beforeHash, hash)
 	}
 	if conditionStatus(updated.Status.Conditions, tunnelsv1alpha1.ConditionResolved) != metav1.ConditionTrue {
 		t.Fatalf("Resolved condition = %s, want True", conditionStatus(updated.Status.Conditions, tunnelsv1alpha1.ConditionResolved))

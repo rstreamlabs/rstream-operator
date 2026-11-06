@@ -53,6 +53,9 @@ func TestDefaultConnectionResolverResolvesProjectID(t *testing.T) {
 	if resolution.Engine != "abc12345.us.example.com:8443" {
 		t.Fatalf("Engine = %q", resolution.Engine)
 	}
+	if resolution.StableDomainEngine != "abc12345.global.example.com:443" {
+		t.Fatalf("StableDomainEngine = %q", resolution.StableDomainEngine)
+	}
 	if resolution.Region != "us-east-1" {
 		t.Fatalf("Region = %q", resolution.Region)
 	}
