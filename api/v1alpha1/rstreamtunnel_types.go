@@ -43,7 +43,7 @@ type RstreamTunnelSpec struct {
 	// AllowCrossRegionRouting permits the engine to route payloads across regions when ingress and tunnel owner differ. Same-region traffic remains direct.
 	// +optional
 	AllowCrossRegionRouting *bool `json:"allowCrossRegionRouting,omitempty"`
-	// Hostname sets a stable public hostname. When omitted, the Engine assigns a hostname and the agent reuses it on reconnect.
+	// Hostname sets a stable public hostname. When omitted, the agent obtains a public hostname and reuses it on reconnect.
 	// +optional
 	Hostname string `json:"hostname,omitempty"`
 	// TCPPort requests a previously reserved public port for a published TCP tunnel. When omitted, the engine allocates an ephemeral port.

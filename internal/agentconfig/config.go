@@ -14,9 +14,10 @@ type Config struct {
 }
 
 type ConnectionConfig struct {
-	Engine    string           `yaml:"engine"`
-	MTLS      *MTLSConfig      `yaml:"mtls,omitempty"`
-	Transport *TransportConfig `yaml:"transport,omitempty"`
+	Engine             string           `yaml:"engine"`
+	StableDomainEngine string           `yaml:"stableDomainEngine,omitempty"`
+	MTLS               *MTLSConfig      `yaml:"mtls,omitempty"`
+	Transport          *TransportConfig `yaml:"transport,omitempty"`
 }
 
 type MTLSConfig struct {

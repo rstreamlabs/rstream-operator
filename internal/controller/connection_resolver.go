@@ -15,11 +15,12 @@ import (
 const defaultAPIURL = "https://rstream.io"
 
 type connectionResolution struct {
-	Engine          string
-	APIURL          string
-	ProjectID       string
-	ProjectEndpoint string
-	Region          string
+	Engine             string
+	StableDomainEngine string
+	APIURL             string
+	ProjectID          string
+	ProjectEndpoint    string
+	Region             string
 }
 
 type connectionResolver interface {
@@ -90,10 +91,11 @@ func resolutionFromProject(apiURL, region string, project controlplane.Project) 
 		selectedRegion = "auto"
 	}
 	return connectionResolution{
-		Engine:          engine,
-		APIURL:          apiURL,
-		ProjectID:       project.ID,
-		ProjectEndpoint: project.Endpoint,
-		Region:          selectedRegion,
+		Engine:             engine,
+		StableDomainEngine: project.EngineAddress(),
+		APIURL:             apiURL,
+		ProjectID:          project.ID,
+		ProjectEndpoint:    project.Endpoint,
+		Region:             selectedRegion,
 	}, nil
 }

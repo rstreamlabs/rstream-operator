@@ -85,7 +85,7 @@ func (r *Runner) runOnce(ctx context.Context, reporter Reporter, health *HealthS
 		return fmt.Errorf("connect control channel: %w", err)
 	}
 	defer ctrl.Close()
-	tunnel, err := ctrl.CreateTunnel(ctx, props)
+	tunnel, err := openTunnel(ctx, ctrl, props, r.Config.Connection)
 	if err != nil {
 		return fmt.Errorf("create tunnel: %w", err)
 	}

@@ -83,6 +83,7 @@ func (r *RstreamTunnelReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 		return ctrl.Result{}, nil
 	}
 	agentConfig := resources.BuildAgentConfig(&tunnel, resolvedConnection.Connection, target, requestedHostname(&tunnel), resolvedConnection.Engine)
+	agentConfig.Connection.StableDomainEngine = resolvedConnection.StableDomainEngine
 	configYAML, err := resources.MarshalAgentConfig(agentConfig)
 	if err != nil {
 		return ctrl.Result{}, err
@@ -110,6 +111,7 @@ func (r *RstreamTunnelReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 type resolvedConnection struct {
 	Connection             *tunnelsv1alpha1.RstreamConnection
 	Engine                 string
+	StableDomainEngine     string
 	APIURL                 string
 	ProjectID              string
 	ProjectEndpoint        string
@@ -168,6 +170,7 @@ func (r *RstreamTunnelReconciler) resolveConnection(ctx context.Context, tunnel 
 	return resolvedConnection{
 		Connection:             &connection,
 		Engine:                 resolution.Engine,
+		StableDomainEngine:     resolution.StableDomainEngine,
 		APIURL:                 resolution.APIURL,
 		ProjectID:              resolution.ProjectID,
 		ProjectEndpoint:        resolution.ProjectEndpoint,

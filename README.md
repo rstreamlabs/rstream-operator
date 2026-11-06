@@ -96,7 +96,7 @@ spec:
 
 `projectEndpoint` is the preferred hosted rstream path. The operator resolves the current engine address through the Control plane and stores the result in `RstreamConnection.status.engine`. A Global project uses its global endpoint with `region: auto`; an explicit authorized region keeps the agent control channel on that regional endpoint.
 
-For a published tunnel that uses a hostname, the Engine assigns its public name on the first successful connection. The agent saves it in `RstreamTunnel.status.hostname` and reuses it after reconnects and Pod restarts. Set `spec.hostname` to request a specific hostname.
+For a published tunnel that uses a hostname, the operator uses the project’s public domain even when the agent connects through a regional Engine. With an explicit Engine address and no project metadata, the agent obtains the serving domain from a temporary tunnel before publishing a stable address. The agent saves the confirmed address in `RstreamTunnel.status.hostname` and reuses it after reconnects and Pod restarts. Set `spec.hostname` to request a specific hostname.
 
 For self-hosted engines or internal test environments without a Control plane, specify `engine` directly instead:
 

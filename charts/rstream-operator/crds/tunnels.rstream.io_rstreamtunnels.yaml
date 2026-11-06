@@ -1152,7 +1152,7 @@ spec:
                 type: array
               hostname:
                 description: Hostname sets a stable public hostname. When omitted,
-                  the Engine assigns a hostname and the agent reuses it on reconnect.
+                  the agent obtains a public hostname and reuses it on reconnect.
                 type: string
               http:
                 description: HTTP configures HTTP-specific edge behavior.
