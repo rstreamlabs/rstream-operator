@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.6.2](https://github.com/rstreamlabs/rstream-operator/compare/v0.6.1...v0.6.2) (2026-11-06)
+
+
+### Bug Fixes
+
+* allocate reclaimable hostnames on the serving domain ([b3065b8](https://github.com/rstreamlabs/rstream-operator/commit/b3065b82861dd84da2c2e43c0c8f2eec799ce0f9))
+* **operator:** preserve stable tunnel addresses through regional engines ([99ff848](https://github.com/rstreamlabs/rstream-operator/commit/99ff8480686d3177e24d69d1d70f3f6cdd150793))
+* **operator:** reuse the tunnel hostname assigned by the engine ([0487c60](https://github.com/rstreamlabs/rstream-operator/commit/0487c609ee66a1acd5b6ac3db2bf26386b8760b4))
+
 ## [0.6.1](https://github.com/rstreamlabs/rstream-operator/compare/v0.6.0...v0.6.1) (2026-11-05)
 
 
