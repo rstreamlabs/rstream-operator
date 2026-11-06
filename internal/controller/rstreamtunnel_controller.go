@@ -8,7 +8,6 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/rstreamlabs/rstream-go"
 	tunnelsv1alpha1 "github.com/rstreamlabs/rstream-operator/api/v1alpha1"
 	"github.com/rstreamlabs/rstream-operator/internal/resources"
 	appsv1 "k8s.io/api/apps/v1"
@@ -83,12 +82,7 @@ func (r *RstreamTunnelReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 		_ = r.markTargetBlocked(ctx, req.NamespacedName, err)
 		return ctrl.Result{}, nil
 	}
-	hostname, err := r.desiredHostname(ctx, &tunnel, resolvedConnection.Engine)
-	if err != nil {
-		_ = r.markTunnelBlocked(ctx, req.NamespacedName, tunnelsv1alpha1.ReasonInvalidSpec, err.Error())
-		return ctrl.Result{}, nil
-	}
-	agentConfig := resources.BuildAgentConfig(&tunnel, resolvedConnection.Connection, target, hostname, resolvedConnection.Engine)
+	agentConfig := resources.BuildAgentConfig(&tunnel, resolvedConnection.Connection, target, requestedHostname(&tunnel), resolvedConnection.Engine)
 	configYAML, err := resources.MarshalAgentConfig(agentConfig)
 	if err != nil {
 		return ctrl.Result{}, err
@@ -106,7 +100,7 @@ func (r *RstreamTunnelReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 	if err != nil {
 		return ctrl.Result{}, err
 	}
-	if err := r.markReconciled(ctx, req.NamespacedName, &tunnel, target, hostname, deploymentReady); err != nil {
+	if err := r.markReconciled(ctx, req.NamespacedName, &tunnel, target, deploymentReady); err != nil {
 		return ctrl.Result{}, err
 	}
 	logger.V(1).Info("Tunnel reconciled")
@@ -193,33 +187,11 @@ func (r *RstreamTunnelReconciler) resolveTarget(ctx context.Context, tunnel *tun
 	return resolveServiceTarget(tunnel, &svc)
 }
 
-func (r *RstreamTunnelReconciler) desiredHostname(ctx context.Context, tunnel *tunnelsv1alpha1.RstreamTunnel, engine string) (string, error) {
-	if tunnel.Spec.Publish != nil && !*tunnel.Spec.Publish {
-		return "", nil
+func requestedHostname(tunnel *tunnelsv1alpha1.RstreamTunnel) string {
+	if tunnel.Spec.Protocol == tunnelsv1alpha1.ProtocolTCP || (tunnel.Spec.Publish != nil && !*tunnel.Spec.Publish) {
+		return ""
 	}
-	if tunnel.Spec.Protocol == tunnelsv1alpha1.ProtocolTCP {
-		return "", nil
-	}
-	if strings.TrimSpace(tunnel.Spec.Hostname) != "" {
-		return strings.TrimSpace(tunnel.Spec.Hostname), nil
-	}
-	if strings.TrimSpace(tunnel.Status.Hostname) != "" {
-		return strings.TrimSpace(tunnel.Status.Hostname), nil
-	}
-	hostname, ok, err := rstream.GenerateStableDomain(engine)
-	if err != nil {
-		return "", err
-	}
-	if !ok {
-		return "", nil
-	}
-	key := types.NamespacedName{Namespace: tunnel.Namespace, Name: tunnel.Name}
-	if err := patchTunnelStatus(ctx, r.Client, key, func(current *tunnelsv1alpha1.RstreamTunnel) {
-		current.Status.Hostname = hostname
-	}); err != nil {
-		return "", err
-	}
-	return hostname, nil
+	return strings.TrimSpace(tunnel.Spec.Hostname)
 }
 
 func validateTunnelSpec(tunnel *tunnelsv1alpha1.RstreamTunnel) error {
@@ -318,16 +290,13 @@ func (r *RstreamTunnelReconciler) markTargetBlocked(ctx context.Context, key typ
 	})
 }
 
-func (r *RstreamTunnelReconciler) markReconciled(ctx context.Context, key types.NamespacedName, tunnel *tunnelsv1alpha1.RstreamTunnel, target resources.ResolvedTarget, hostname string, deploymentReady bool) error {
+func (r *RstreamTunnelReconciler) markReconciled(ctx context.Context, key types.NamespacedName, tunnel *tunnelsv1alpha1.RstreamTunnel, target resources.ResolvedTarget, deploymentReady bool) error {
 	names := resources.NamesFor(tunnel)
 	return patchTunnelStatus(ctx, r.Client, key, func(current *tunnelsv1alpha1.RstreamTunnel) {
 		current.Status.LastError = ""
 		current.Status.AgentDeployment = names.Deployment
 		current.Status.Target = target.Address()
 		current.Status.RstreamName = resources.RstreamName(current)
-		if hostname != "" || current.Spec.Protocol == tunnelsv1alpha1.ProtocolTCP {
-			current.Status.Hostname = hostname
-		}
 		setCondition(&current.Status.Conditions, current.Generation, tunnelsv1alpha1.ConditionAccepted, metav1.ConditionTrue, tunnelsv1alpha1.ReasonAccepted, "Tunnel spec is accepted.")
 		setCondition(&current.Status.Conditions, current.Generation, tunnelsv1alpha1.ConditionResolved, metav1.ConditionTrue, tunnelsv1alpha1.ReasonResolved, "Kubernetes target and rstream connection are resolved.")
 		if deploymentReady {

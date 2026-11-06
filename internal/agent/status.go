@@ -4,13 +4,13 @@ package agent
 
 import (
 	"context"
+	"net/url"
 	"os"
 	"strings"
 	"time"
 
 	tunnelsv1alpha1 "github.com/rstreamlabs/rstream-operator/api/v1alpha1"
 	"github.com/rstreamlabs/rstream-operator/internal/agentconfig"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -19,7 +19,7 @@ import (
 )
 
 type Reporter interface {
-	Connecting(context.Context) error
+	Connecting(context.Context) (string, error)
 	Online(context.Context, OnlineStatus) error
 	Disconnected(context.Context, error) error
 }
@@ -34,7 +34,7 @@ type OnlineStatus struct {
 
 type NoopReporter struct{}
 
-func (NoopReporter) Connecting(context.Context) error           { return nil }
+func (NoopReporter) Connecting(context.Context) (string, error) { return "", nil }
 func (NoopReporter) Online(context.Context, OnlineStatus) error { return nil }
 func (NoopReporter) Disconnected(context.Context, error) error  { return nil }
 
@@ -68,8 +68,10 @@ func NewKubernetesReporter(c client.Client, cfg agentconfig.KubernetesConfig) Re
 	}
 }
 
-func (r *KubernetesReporter) Connecting(ctx context.Context) error {
-	return r.patch(ctx, func(t *tunnelsv1alpha1.RstreamTunnel) {
+func (r *KubernetesReporter) Connecting(ctx context.Context) (string, error) {
+	var hostname string
+	err := r.patch(ctx, func(t *tunnelsv1alpha1.RstreamTunnel) {
+		hostname = confirmedHostname(t.Status)
 		t.Status.LastError = ""
 		setCondition(&t.Status.Conditions, metav1.Condition{
 			Type:               tunnelsv1alpha1.ConditionTunnelReady,
@@ -86,6 +88,21 @@ func (r *KubernetesReporter) Connecting(ctx context.Context) error {
 			Message:            "Waiting for the rstream tunnel to become ready.",
 		})
 	})
+	return hostname, err
+}
+
+func confirmedHostname(status tunnelsv1alpha1.RstreamTunnelStatus) string {
+	// Earlier controllers wrote a guessed hostname before the first connection.
+	// Only reuse a name the Engine returned for an online tunnel.
+	endpoint, _, _ := strings.Cut(status.ForwardingAddress, " ")
+	if !strings.Contains(endpoint, "://") {
+		endpoint = "//" + endpoint
+	}
+	address, err := url.Parse(endpoint)
+	if err != nil || status.TunnelID == "" || !strings.EqualFold(address.Hostname(), status.Hostname) {
+		return ""
+	}
+	return status.Hostname
 }
 
 func (r *KubernetesReporter) Online(ctx context.Context, status OnlineStatus) error {
@@ -148,9 +165,6 @@ func (r *KubernetesReporter) patch(ctx context.Context, mutate func(*tunnelsv1al
 	return retry.RetryOnConflict(retry.DefaultRetry, func() error {
 		var tunnel tunnelsv1alpha1.RstreamTunnel
 		if err := r.client.Get(ctx, r.key, &tunnel); err != nil {
-			if apierrors.IsNotFound(err) {
-				return nil
-			}
 			return err
 		}
 		before := tunnel.DeepCopy()
@@ -161,7 +175,7 @@ func (r *KubernetesReporter) patch(ctx context.Context, mutate func(*tunnelsv1al
 				tunnel.Status.Conditions[i].LastTransitionTime = metav1.NewTime(time.Now())
 			}
 		}
-		return r.client.Status().Patch(ctx, &tunnel, client.MergeFrom(before))
+		return r.client.Status().Patch(ctx, &tunnel, client.MergeFromWithOptions(before, client.MergeFromWithOptimisticLock{}))
 	})
 }
 

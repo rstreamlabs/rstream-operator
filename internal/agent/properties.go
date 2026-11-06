@@ -11,7 +11,7 @@ import (
 	"github.com/rstreamlabs/rstream-operator/internal/agentconfig"
 )
 
-func TunnelProperties(cfg agentconfig.TunnelConfig) (rstream.TunnelProperties, error) {
+func TunnelProperties(cfg agentconfig.TunnelConfig, confirmedHostname string) (rstream.TunnelProperties, error) {
 	props := rstream.TunnelProperties{}
 	name := strings.TrimSpace(cfg.Name)
 	if name == "" {
@@ -71,8 +71,12 @@ func TunnelProperties(cfg agentconfig.TunnelConfig) (rstream.TunnelProperties, e
 	if cfg.AllowCrossRegionRouting != nil {
 		props.AllowCrossRegionRouting = cfg.AllowCrossRegionRouting
 	}
-	if strings.TrimSpace(cfg.Hostname) != "" {
-		hostname := strings.TrimSpace(cfg.Hostname)
+	hostname := strings.TrimSpace(cfg.Hostname)
+	published := props.Publish == nil || *props.Publish
+	if hostname == "" && published && (props.Protocol == nil || *props.Protocol != rstream.ProtocolTCP) {
+		hostname = confirmedHostname
+	}
+	if hostname != "" {
 		props.Hostname = &hostname
 	}
 	if len(cfg.Labels) > 0 {

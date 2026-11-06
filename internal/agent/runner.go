@@ -50,7 +50,6 @@ func (r *Runner) Run(ctx context.Context) error {
 			return nil
 		}
 		health.SetReady(false)
-		_ = reporter.Connecting(ctx)
 		err := r.runOnce(ctx, reporter, health, logger)
 		if err == nil || errors.Is(err, context.Canceled) {
 			health.SetReady(false)
@@ -69,7 +68,11 @@ func (r *Runner) Run(ctx context.Context) error {
 }
 
 func (r *Runner) runOnce(ctx context.Context, reporter Reporter, health *HealthState, logger *slog.Logger) error {
-	props, err := TunnelProperties(r.Config.Tunnel)
+	confirmed, err := reporter.Connecting(ctx)
+	if err != nil {
+		return fmt.Errorf("read tunnel status: %w", err)
+	}
+	props, err := TunnelProperties(r.Config.Tunnel, confirmed)
 	if err != nil {
 		return err
 	}
@@ -102,8 +105,10 @@ func (r *Runner) runOnce(ctx context.Context, reporter Reporter, health *HealthS
 		RstreamName:       stringPtrValue(resolvedProps.Name),
 		Target:            targetAddress(r.Config.Target),
 	}
+	if err := reporter.Online(ctx, online); err != nil {
+		return fmt.Errorf("record online tunnel: %w", err)
+	}
 	health.SetReady(true)
-	_ = reporter.Online(ctx, online)
 	logger.Info("Tunnel online",
 		"tunnel_id", online.TunnelID,
 		"forwarding_address", online.ForwardingAddress,

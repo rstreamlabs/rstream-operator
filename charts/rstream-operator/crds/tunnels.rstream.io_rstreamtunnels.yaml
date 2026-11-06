@@ -1152,7 +1152,7 @@ spec:
                 type: array
               hostname:
                 description: Hostname sets a stable public hostname. When omitted,
-                  the operator generates one once and stores it in status.
+                  the Engine assigns a hostname and the agent reuses it on reconnect.
                 type: string
               http:
                 description: HTTP configures HTTP-specific edge behavior.
@@ -1422,8 +1422,8 @@ spec:
                   for published tunnels.
                 type: string
               hostname:
-                description: Hostname is the stable hostname requested for published
-                  tunnels.
+                description: Hostname is the hostname confirmed by the Engine for
+                  the published tunnel.
                 type: string
               lastError:
                 description: LastError contains the latest human-readable error reported
