@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.2](https://github.com/rstreamlabs/rstream-operator/compare/v0.6.1...v0.6.2) (2026-11-06)
+
+
+### Bug Fixes
+
+* Preserve a published tunnel’s stable address when using a regional Engine and after restarting the agent Pod. [#30](https://github.com/rstreamlabs/rstream-operator/pull/30)
+
 ## [0.6.1](https://github.com/rstreamlabs/rstream-operator/compare/v0.6.0...v0.6.1) (2026-11-05)
 
 
