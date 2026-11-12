@@ -1,6 +1,6 @@
 module github.com/rstreamlabs/rstream-operator
 
-go 1.27.3
+go 1.27.4
 
 require (
 	github.com/rstreamlabs/rstream-go v1.36.4
