@@ -3,7 +3,7 @@ module github.com/rstreamlabs/rstream-operator
 go 1.27.4
 
 require (
-	github.com/rstreamlabs/rstream-go v1.37.1-0.20261113154359-6edb3c31987b
+	github.com/rstreamlabs/rstream-go v1.37.1-0.20261113181455-86f80e042235
 	gopkg.in/yaml.v3 v3.0.1
 	k8s.io/api v0.36.6
 	k8s.io/apimachinery v0.36.6
@@ -50,7 +50,7 @@ require (
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/pion/dtls/v3 v3.1.15 // indirect
 	github.com/pion/logging v0.2.4 // indirect
-	github.com/pion/transport/v5 v5.1.1 // indirect
+	github.com/pion/transport/v5 v5.1.4 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/prometheus/client_golang v1.24.1 // indirect
