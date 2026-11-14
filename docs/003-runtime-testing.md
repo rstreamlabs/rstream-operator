@@ -55,6 +55,25 @@ When a sibling `../rstream-go` checkout exists, `hack/runtime-smoke.sh` builds t
 
 ## Local Engine
 
+### Reviewed transport graph
+
+The operator's Go SDK graph uses QUIC v0.64.1, WebTransport v0.13.0, MASQUE
+v0.6.0, CONNECT-IP v0.6.0 and DTLS v3.1.15. The standard Go test suite links and
+checks this exact tuple with `TestReviewedTransportDependencyGraph`; a source
+replacement or drift to another version fails the check.
+
+The qualification branch references SDK source commit `bc2415800ddf` through its
+immutable Go pseudo-version. It is not a stable SDK release. Keep consumer review
+PRs unmerged until the SDK is certified and its normal stable version is
+substituted. Source tests do not publish a package or deploy an operator.
+
+For isolated local smoke tests, use a dedicated `KIND_CLUSTER` and `KUBECONFIG`
+file and trust the fixture CA in the test image and HTTP probe. Keep certificate
+verification enabled. The smoke scenario also restarts the agent and verifies
+that its published tunnel address remains stable.
+
+### Connection settings
+
 For local or self-hosted engine testing, start the engine using that engine repository's instructions, then point the smoke test at it:
 
 ```sh
