@@ -62,10 +62,11 @@ v0.6.0, CONNECT-IP v0.6.0 and DTLS v3.1.15. The standard Go test suite links and
 checks this exact tuple with `TestReviewedTransportDependencyGraph`; a source
 replacement or drift to another version fails the check.
 
-The qualification branch references SDK source commit `bc2415800ddf` through its
-immutable Go pseudo-version. It is not a stable SDK release. Keep consumer review
-PRs unmerged until the SDK is certified and its normal stable version is
-substituted. Source tests do not publish a package or deploy an operator.
+The exact SDK input is the immutable module version in `go.mod`. A Go
+pseudo-version identifies source, not a stable SDK release; retain that
+distinction when qualifying a candidate. Review the module pin and the tested
+transport tuple together when updating dependencies. Source tests do not publish
+a package or deploy an operator.
 
 For isolated local smoke tests, use a dedicated `KIND_CLUSTER` and `KUBECONFIG`
 file and trust the fixture CA in the test image and HTTP probe. Keep certificate

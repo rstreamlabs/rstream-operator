@@ -118,7 +118,26 @@ spec:
 
 `mode` accepts `auto`, `tls`, or `quic`. The default `auto` mode prefers QUIC and falls back to TLS while opening the agent control channel, then keeps the selected transport for that agent client. `useQuic` remains accepted for compatibility with older manifests; do not set both fields in new resources.
 
-Use the other transport settings only when required by the network environment. The default path is usually best.
+The transport fields apply to the agent-to-engine connection, independently of
+`RstreamTunnel.spec.protocol`, which selects the public tunnel protocol.
+
+| Field under `transport` | Contract |
+| --- | --- |
+| `mode` | `auto`, `tls` or `quic`; omitted selects `auto` unless legacy `useQuic` is present. |
+| `ipFamily` | `auto`, `ipv4` or `ipv6`; defaults to the host network stack with `auto`. |
+| `bind.mode` | `address` or `interface`; defaults to `address`. |
+| `bind.address`, `bind.interface` | Local source address or interface for the selected binding mode. |
+| `dns.override` | Custom resolver address for engine lookups. |
+| `dns.tls`, `dns.serverName` | DNS-over-TLS selection and certificate server name for that resolver. |
+| `dns.dnssec` | Request DNSSEC validation through the agent SDK. |
+| `mptcp` | Enable Multipath TCP where the node kernel supports it. |
+| `proxy.http` | HTTP proxy URL for TLS engine transport. |
+| `proxy.usernameSecretRef`, `proxy.passwordSecretRef` | Same-namespace Secret key references for proxy credentials. |
+| `proxy.headers` | Additional proxy headers; these inline values are not Secret references. |
+| `useQuic` | Legacy boolean transport selector; prefer `mode` in new resources. |
+
+Keep credentials in Secret references. Use these overrides only when required by
+the network environment; they do not change the published tunnel's access policy.
 
 ## RstreamTunnel
 
@@ -243,6 +262,7 @@ agent:
 
 | Field | Description |
 | --- | --- |
+| `observedGeneration` | Last connection spec generation reconciled. |
 | `conditions` | Connection configuration readiness. |
 | `apiURL` | Control plane URL used for project resolution. |
 | `projectID` | Resolved project ID when lookup is used. |
