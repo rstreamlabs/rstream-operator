@@ -1,6 +1,6 @@
 # Troubleshooting
 
-Start with:
+The tunnel status shows whether a failure comes from the specification, a referenced resource, the agent Pod or the connection to rstream. Start with:
 
 ```sh
 kubectl -n <namespace> describe rstreamtunnel <name>
@@ -10,17 +10,19 @@ kubectl -n <namespace> describe rstreamtunnel <name>
 
 Check the conditions in order:
 
-- `Accepted=False`: the spec is invalid.
-- `Resolved=False`: a referenced Service, port, connection, or Secret is missing.
-- `AgentReady=False`: Kubernetes has not made the agent Deployment available.
-- `TunnelReady=False`: the agent cannot connect to rstream or cannot create the tunnel.
+| Condition | Meaning |
+| --- | --- |
+| `Accepted=False` | The spec is invalid. |
+| `Resolved=False` | A referenced Service, port, connection or Secret is missing. |
+| `AgentReady=False` | Kubernetes has not made the agent Deployment available. |
+| `TunnelReady=False` | The agent cannot connect to rstream or create the tunnel. |
 
 ## Secret Missing
 
-The Secret must be in the same namespace as the `RstreamConnection`.
+The Secret must be in the same namespace as the `RstreamConnection`. Inspect the key names and sizes without printing credential values:
 
 ```sh
-kubectl -n <namespace> get secret <name> -o jsonpath='{.data}'
+kubectl -n <namespace> describe secret <name>
 ```
 
 ## Service Port Missing
@@ -37,13 +39,13 @@ Named ports are preferred because they survive port number changes.
 
 When `RstreamConnection.spec.projectEndpoint` or `spec.projectID` is used, the manager calls the Control plane before it creates the agent config.
 
-Check:
-
-- `spec.apiURL` is reachable from the manager Pod. It defaults to `https://rstream.io`.
-- `tokenSecretRef` points to a token that can read the project.
-- `spec.region` is `auto` or a region authorized for the project.
-- every `controlPlaneHeaders.valueSecretRef` exists and contains the expected access-gateway value.
-- `kubectl describe rstreamconnection <name>` shows `Ready=True` and `status.engine`.
+| Check | Expected result |
+| --- | --- |
+| `spec.apiURL` | Reachable from the manager Pod; defaults to `https://rstream.io`. |
+| `tokenSecretRef` | References a token permitted to read the project. |
+| `spec.region` | `auto` or a region authorized for the project. |
+| `controlPlaneHeaders.valueSecretRef` | Each referenced Secret contains the expected access-gateway value. |
+| `kubectl describe rstreamconnection <name>` | Shows `Ready=True` and `status.engine`. |
 
 `status.region` reports `auto` or the explicit region used by the last successful resolution. Access-gateway headers are manager-only credentials and must not appear in the generated agent ConfigMap.
 
@@ -51,16 +53,14 @@ Self-hosted deployments without a Control plane should use `spec.engine` directl
 
 ## Protocol Mismatch
 
-UDP tunnels need a UDP Service port:
+Match the Kubernetes Service transport to the tunnel protocol:
 
-- `protocol: quic`
-- `protocol: dtls`
-- `protocol: http` with `http.version: h3`
-
-TCP tunnels need a TCP Service port:
-
-- `protocol: http` with `http/1.1` or `h2c`
-- `protocol: tls`
+| Tunnel configuration | Service transport |
+| --- | --- |
+| `protocol: quic` or `protocol: dtls` | UDP |
+| `protocol: http` with `http.version: h3` | UDP |
+| `protocol: http` with `http/1.1` or `h2c` | TCP |
+| `protocol: tls` | TCP |
 
 ## Agent Logs
 

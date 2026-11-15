@@ -23,7 +23,7 @@ kubectl -n rstream-demo create secret generic rstream-credentials \
   --from-literal=token="$RSTREAM_TOKEN"
 ```
 
-Create the rstream connection and tunnel:
+Save the connection and tunnel below as `rstream-tunnel.yaml`:
 
 ```yaml
 apiVersion: tunnels.rstream.io/v1alpha1
@@ -53,9 +53,10 @@ spec:
     version: http/1.1
 ```
 
-Check readiness and the public address:
+Apply the file, then check readiness and the public address:
 
 ```sh
+kubectl apply -f rstream-tunnel.yaml
 kubectl -n rstream-demo get rstreamtunnel web
 kubectl -n rstream-demo describe rstreamtunnel web
 ```

@@ -1,6 +1,8 @@
 # rstream Kubernetes operator
 
-Expose Kubernetes Services through rstream using namespaced custom resources. The operator manages the agent lifecycle while application traffic flows through a dedicated agent Pod for each tunnel.
+rstream makes private services reachable through outbound connections instead of requiring inbound access to their hosts. This operator applies that model to Kubernetes Services using namespaced custom resources.
+
+Declare a connection and a tunnel alongside the application resources. The controller reconciles their configuration and lifecycle; a dedicated agent Pod for each tunnel carries the traffic to the target Service. The application does not need to embed an SDK.
 
 | Resource            | Responsibility                                                                         |
 | ------------------- | -------------------------------------------------------------------------------------- |
