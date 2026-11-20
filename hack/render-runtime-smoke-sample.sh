@@ -11,4 +11,7 @@ if [[ -z "${NAMESPACE}" || ${#NAMESPACE} -gt 63 || ! "${NAMESPACE}" =~ ^[a-z0-9]
   exit 2
 fi
 
-sed "s/rstream-demo/${NAMESPACE}/g" "${ROOT_DIR}/config/samples/http_server.yaml"
+sed \
+  -e "s/^  name: rstream-demo$/  name: ${NAMESPACE}/" \
+  -e "s/^  namespace: rstream-demo$/  namespace: ${NAMESPACE}/" \
+  "${ROOT_DIR}/config/samples/http_server.yaml"

@@ -46,8 +46,8 @@ jobs:
           printf '%s  %s\n' "$HELM_SHA256" "$archive" | sha256sum --check
           tar -xzf "$archive"
           sudo install -m 0755 linux-amd64/helm /usr/local/bin/helm
-      - uses: docker/setup-qemu-action@96fe6ef7f33517b61c61be40b68a1882f3264fb8 # v4.2.0
-      - uses: docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e # v4.3.0
+      - uses: docker/setup-qemu-action@99012661954931238ded8c8b007157a8430204e1 # v4.4.0
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
       - name: Build release candidate
         shell: bash
         run: |
@@ -71,7 +71,7 @@ jobs:
             .
           archive="release-candidate-${VERSION}.tar.gz"
           ./.github/scripts/create-release-candidate.sh "$VERSION" "$archive"
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: release-candidate-${{ env.VERSION }}
           path: |

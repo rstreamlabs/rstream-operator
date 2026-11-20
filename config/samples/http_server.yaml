@@ -20,10 +20,17 @@ spec:
       labels:
         app: http-server
     spec:
+      automountServiceAccountToken: false
       containers:
         - name: http-server
           image: python:3.12-alpine
-          command: ["python", "-m", "http.server", "8080", "--bind", "0.0.0.0"]
+          command:
+            - sh
+            - -ec
+            - |
+              mkdir -p /tmp/rstream-demo
+              printf 'hello from rstream Operator\n' > /tmp/rstream-demo/index.html
+              exec python -m http.server 8080 --bind 0.0.0.0 --directory /tmp/rstream-demo
           ports:
             - containerPort: 8080
               name: http
