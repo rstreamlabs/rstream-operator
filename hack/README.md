@@ -70,10 +70,9 @@ See [Troubleshooting](../docs/005-troubleshooting.md) for status and logs.
 
 ## Reviewed SDK transport graph
 
-The operator's immutable Go module pin in `go.mod` selects the SDK source
-used in release builds. A Go pseudo-version identifies source. Review the
-pin and the transport tuple together when upgrading.
+The operator uses Go SDK v1.38.1. Review the SDK pin and the transport
+dependencies together when upgrading.
 
 `TestReviewedTransportDependencyGraph` checks the selected module graph
-and linked test binary. The current reviewed versions are QUIC v0.64.1,
-WebTransport v0.13.0, MASQUE v0.6.0, CONNECT-IP v0.6.0, and DTLS v3.1.15.
+and linked test binary. The current reviewed versions are QUIC v0.60.0,
+WebTransport v0.11.1, MASQUE v0.4.0, CONNECT-IP v0.1.0, and DTLS v3.1.15.

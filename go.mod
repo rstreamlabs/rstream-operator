@@ -4,11 +4,11 @@ go 1.27.4
 
 require (
 	github.com/pion/dtls/v3 v3.1.15
-	github.com/quic-go/connect-ip-go v0.6.0
-	github.com/quic-go/masque-go v0.6.0
-	github.com/quic-go/quic-go v0.64.1
-	github.com/quic-go/webtransport-go v0.13.0
-	github.com/rstreamlabs/rstream-go v1.37.1-0.20261114141308-06bc287010aa
+	github.com/quic-go/connect-ip-go v0.1.0
+	github.com/quic-go/masque-go v0.4.0
+	github.com/quic-go/quic-go v0.60.0
+	github.com/quic-go/webtransport-go v0.11.1
+	github.com/rstreamlabs/rstream-go v1.38.1
 	gopkg.in/yaml.v3 v3.0.1
 	k8s.io/api v0.37.2
 	k8s.io/apimachinery v0.37.2
