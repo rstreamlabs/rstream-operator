@@ -1,17 +1,12 @@
-# Kubernetes operator documentation
+# Kubernetes Operator documentation
 
-Start with [Install and create a tunnel](000-getting-started.md) for a running
-cluster, or [Build from source](001-building-from-source.md) for a credential-free
-local check. The controller manages agents for Services; application traffic
-flows through the agents.
-
-| Guide | Purpose |
+| Guide | Outcome |
 | --- | --- |
-| [000 · Getting started](000-getting-started.md) | Install the chart, configure credentials and request a Service tunnel. |
-| [001 · Build from source](001-building-from-source.md) | Compile both processes and choose local checks. |
-| [002 · Architecture](002-architecture.md) | Understand reconciliation, ownership and failures. |
-| [003 · API reference](003-api-reference.md) | Set connections, targets, transport and policy. |
-| [004 · Runtime testing](004-runtime-testing.md) | Qualify the controller and agent against an explicit fixture. |
-| [005 · Troubleshooting](005-troubleshooting.md) | Interpret readiness and diagnose connection problems. |
+| [000 · Install the Operator](000-getting-started.md) | Install the published chart and verify the manager and APIs. |
+| [001 · Publish your first Service](001-first-tunnel.md) | Configure a project or an Engine, publish an HTTP Service, and verify the response. |
+| [002 · Architecture and credentials](002-architecture.md) | Understand ownership, Secret access, network paths, and status. |
+| [003 · API reference](003-api-reference.md) | Choose connection, tunnel, protocol, and policy settings. |
+| [004 · Installation reference](004-installation-reference.md) | Configure Helm values, images, manager options, and upgrades. |
+| [005 · Troubleshoot a tunnel](005-troubleshooting.md) | Identify the failing hop and verify the route end to end. |
 
-[Contributing](../CONTRIBUTING.md) describes API generation and chart maintenance.
+[Contributing](../CONTRIBUTING.md) covers source builds and local tests.

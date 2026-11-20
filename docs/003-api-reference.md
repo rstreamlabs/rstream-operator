@@ -1,6 +1,9 @@
-# API Reference
+# API reference
 
-This document describes the `tunnels.rstream.io/v1alpha1` API.
+Both resources use `tunnels.rstream.io/v1alpha1`. Use
+`kubectl explain rstreamconnection.spec` and
+`kubectl explain rstreamtunnel.spec` for the schema installed in your
+cluster. See [the first tunnel](001-first-tunnel.md) for a complete example.
 
 ## RstreamConnection
 
@@ -38,7 +41,9 @@ Exactly one of `projectEndpoint`, `projectID`, or `engine` must be set. `project
 
 ### Region selection
 
-A Global project uses its global endpoint when `region` is omitted or set to `auto`. Set an explicit region to keep the agent control channel on one of the regional endpoints authorized for the project:
+A Global project uses its global endpoint when `region` is omitted or set
+to `auto`. Set an explicit region from the project's authorized endpoints
+to keep the agent control channel there.
 
 ```yaml
 spec:
@@ -46,11 +51,12 @@ spec:
   region: us-east-1
 ```
 
-Region selection cannot be combined with an explicit `engine` address.
+Use region selection with a hosted project lookup.
 
 ### Control plane headers
 
-Use Secret-backed headers when a private Control plane is protected by an access gateway:
+Reference the access-gateway credentials in a Secret when a private
+Control plane uses them.
 
 ```yaml
 spec:
@@ -62,11 +68,12 @@ spec:
         key: deployment-bypass
 ```
 
-These headers are sent only while resolving the project through `apiURL`. They are never written to the agent ConfigMap or forwarded to an engine. Reserved authentication and forwarding headers are rejected by the SDK.
+The manager sends these headers only while resolving the project through
+`apiURL`. The SDK rejects reserved authentication and forwarding headers.
 
 ### Direct engine address
 
-For self-hosted engines or internal environments without a Control plane, set `engine` directly:
+Specify the Engine address directly for self-hosted deployments.
 
 ```yaml
 spec:
@@ -93,14 +100,17 @@ spec:
       key: ca.crt
 ```
 
-`caSecretRef` is optional and should be used when the engine certificate chain is not trusted by the default system roots.
+`caSecretRef` is optional. When set, it supplies the trust roots for the
+agent's Engine connection. With token authentication, install any private
+Engine CA in the agent image's system trust store. See how to
+[select an agent image](004-installation-reference.md#helm-values).
 
 ### Transport
 
 ```yaml
 spec:
   transport:
-    mode: auto
+    mode: tls
     ipFamily: ipv4
     dns:
       override: 1.1.1.1
@@ -116,14 +126,17 @@ spec:
         key: password
 ```
 
-`mode` accepts `auto`, `tls`, or `quic`. The default `auto` mode prefers QUIC and falls back to TLS while opening the agent control channel, then keeps the selected transport for that agent client. `useQuic` remains accepted for compatibility with older manifests; do not set both fields in new resources.
+`mode` accepts `auto`, `tls`, or `quic`. The default `auto` mode prefers
+QUIC and falls back to TLS while opening the agent control channel, then
+keeps the selected transport for that agent client. Use `mode` by itself
+in new resources. Older manifests can still use `useQuic`.
 
 The transport fields apply to the agent-to-engine connection, independently of
 `RstreamTunnel.spec.protocol`, which selects the public tunnel protocol.
 
 | Field under `transport` | Contract |
 | --- | --- |
-| `mode` | `auto`, `tls` or `quic`; omitted selects `auto` unless legacy `useQuic` is present. |
+| `mode` | `auto`, `tls`, or `quic`. Omit for `auto`, or specify legacy `useQuic` alone. |
 | `ipFamily` | `auto`, `ipv4` or `ipv6`; defaults to the host network stack with `auto`. |
 | `bind.mode` | `address` or `interface`; defaults to `address`. |
 | `bind.address`, `bind.interface` | Local source address or interface for the selected binding mode. |
@@ -133,11 +146,11 @@ The transport fields apply to the agent-to-engine connection, independently of
 | `mptcp` | Enable Multipath TCP where the node kernel supports it. |
 | `proxy.http` | HTTP proxy URL for TLS engine transport. |
 | `proxy.usernameSecretRef`, `proxy.passwordSecretRef` | Same-namespace Secret key references for proxy credentials. |
-| `proxy.headers` | Additional proxy headers; these inline values are not Secret references. |
-| `useQuic` | Legacy boolean transport selector; prefer `mode` in new resources. |
+| `proxy.headers` | Inline proxy headers. These values are visible in the generated agent ConfigMap. |
+| `useQuic` | Legacy boolean transport selector. |
 
-Keep credentials in Secret references. Use these overrides only when required by
-the network environment; they do not change the published tunnel's access policy.
+The published tunnel's access policy is configured on the tunnel. Keep
+credentials in Secret references.
 
 ## RstreamTunnel
 
@@ -170,12 +183,12 @@ spec:
 | `target.service.namespace` | no | Target namespace. Defaults to the RstreamTunnel namespace. |
 | `target.service.port` | yes | Service port name or number. |
 | `tunnelName` | no | Name registered in rstream. Defaults to `<namespace>-<name>`. |
-| `publish` | no | Publish through the rstream edge. Defaults to `true`. |
+| `publish` | no | Publish through the rstream edge. Defaults to `true`. Set `false` for a tunnel reachable through authenticated rstream clients. |
 | `protocol` | no | `http`, `tls`, `dtls`, `quic`, or `tcp`. Defaults to `http`. |
 | `type` | no | `bytestream` or `datagram`. Inferred when omitted. |
 | `datagramGuaranteedDelivery` | no | Requires reliable delivery for datagram tunnels. Defaults to `false`. |
 | `allowCrossRegionRouting` | no | Permits a cross-region payload path when ingress and tunnel owner are in different regions. Same-region traffic remains direct. |
-| `hostname` | no | Stable public hostname. Generated and persisted in status when omitted. |
+| `hostname` | no | Request a specific published hostname. When omitted, the agent records the Engine-confirmed hostname in status and can reuse it on reconnect. |
 | `tcpPort` | no | Reserved public port requested by a published TCP tunnel. Omit it for an ephemeral port. |
 | `labels` | no | Labels added to the rstream tunnel inventory. |
 | `upstreamTLS` | no | Marks the Kubernetes upstream as TLS-enabled. |
@@ -187,17 +200,27 @@ spec:
 
 ### Protocol and Service Port Rules
 
-The operator validates that the Service port protocol matches the tunnel data type:
+Set `target.service.port` to a Service port name or its `spec.ports[].port`
+number. The operator infers the Service port protocol from the tunnel
+protocol when `type` is omitted.
 
-- `http` with `http/1.1` or `h2c`: Service port must be TCP.
-- `http` with `h3`: Service port must be UDP.
-- `tls`: Service port must be TCP.
-- `tcp`: Service port must be TCP and the tunnel must be published as a bytestream.
-- `dtls` or `quic`: Service port must be UDP.
+| Tunnel protocol | Service port protocol |
+| --- | --- |
+| `http` with `http/1.1` or `h2c` | TCP |
+| `http` with `h3` | UDP |
+| `tls` | TCP |
+| `tcp` | TCP. Use a published bytestream tunnel. |
+| `dtls` or `quic` | UDP |
 
-Set `datagramGuaranteedDelivery: true` only on datagram tunnels. It disables unreliable datagram fast paths, including QUIC datagrams on the agent-to-engine leg, when packet loss is not acceptable.
+An explicit `type: datagram` requires a UDP Service port. An explicit
+`type: bytestream` requires TCP. The Engine also validates whether the
+requested type and protocol can be combined.
 
-Set `allowCrossRegionRouting: true` only when the deployment policy permits a cross-region payload path. When omitted or false, the engine uses Direct routing. The setting applies to every supported tunnel protocol and does not force a cross-region path.
+Set `datagramGuaranteedDelivery: true` only on datagram tunnels. It disables unreliable datagram fast paths, including QUIC datagrams on the agent-to-Engine leg, when packet loss is unacceptable.
+
+Set `allowCrossRegionRouting: true` when the deployment policy permits a
+cross-region payload path. When omitted or false, the Engine uses Direct
+routing. With the option enabled, same-region traffic still uses the direct path.
 
 ### Published TCP
 
@@ -206,7 +229,10 @@ protocol: tcp
 tcpPort: 10042
 ```
 
-Omit `tcpPort` to let the engine allocate an ephemeral port. A specified port must already be reserved for the project through the rstream CLI or Dashboard. Published TCP carries the downstream connection as-is: rstream does not add application-level encryption. Use a secure protocol such as SSH, or use a TLS tunnel when rstream should terminate or pass through TLS.
+Omit `tcpPort` to let the Engine allocate an ephemeral port. Reserve any
+explicit port for the project through the rstream CLI or Dashboard first.
+Published TCP carries application bytes as-is. Use an encrypted application
+protocol such as SSH, or choose a TLS tunnel for TLS termination or passthrough.
 
 ### HTTP
 
@@ -220,81 +246,20 @@ http:
     challenge: false
 ```
 
-`version` can be `http/1.1`, `h2c`, or `h3`.
-
-### TLS
-
-```yaml
-protocol: tls
-tls:
-  mode: terminated
-  minVersion: tls1.3
-  alpns:
-    - h2
-  mtls: true
-```
-
-`mode` can be `terminated` or `passthrough`.
-
-### Agent
-
-```yaml
-agent:
-  image: rstream/rstream-operator:latest
-  resources:
-    requests:
-      cpu: 50m
-      memory: 128Mi
-    limits:
-      memory: 512Mi
-  nodeSelector:
-    kubernetes.io/os: linux
-  tolerations: []
-  podLabels:
-    team: platform
-```
-
-`agent.replicas` is constrained to `1` for now. This avoids ambiguous ownership of a single tunnel hostname until multi-agent semantics are explicitly guaranteed by the rstream engine.
-
-## Status
-
-`RstreamConnection.status` includes the resolved project and engine fields:
-
-| Field | Description |
+| HTTP field | Purpose |
 | --- | --- |
-| `observedGeneration` | Last connection spec generation reconciled. |
-| `conditions` | Connection configuration readiness. |
-| `apiURL` | Control plane URL used for project resolution. |
-| `projectID` | Resolved project ID when lookup is used. |
-| `projectEndpoint` | Resolved project endpoint when lookup is used. |
-| `engine` | Engine address used by tunnel agents. |
-| `region` | Endpoint selection used for the last successful resolution. |
+| `version` | `http/1.1`, `h2c`, or `h3`. The default is `http/1.1`. |
+| `auth.token` | Enable token authentication for callers at the edge. |
+| `auth.rstream` | Enable rstream account authentication for callers at the edge. |
+| `gate.challenge` | Enable the edge browser challenge. |
+| `cors` | Configure allowed browser origins and cross-origin requests. |
 
-`RstreamTunnel.status` includes:
-
-| Field | Description |
-| --- | --- |
-| `observedGeneration` | Last spec generation reconciled. |
-| `conditions` | Readiness and diagnostic conditions. |
-| `tunnelID` | rstream tunnel ID reported by the agent. |
-| `rstreamName` | Name registered in rstream. |
-| `hostname` | Stable hostname requested for the tunnel. |
-| `forwardingAddress` | Public forwarding address returned by rstream. |
-| `target` | Resolved upstream `host:port`. |
-| `agentDeployment` | Managed Deployment name. |
-| `lastError` | Latest controller or agent error. |
-
-Condition types:
-
-- `Accepted`
-- `Resolved`
-- `AgentReady`
-- `TunnelReady`
-- `Ready`
+The HTTP authentication settings apply to callers. Configure the agent's
+own Engine credentials on `RstreamConnection`.
 
 ### HTTP CORS
 
-`spec.http.cors` configures the generic published HTTP tunnel policy:
+Set `spec.http.cors` to configure a published HTTP tunnel's CORS policy.
 
 ```yaml
 http:
@@ -309,4 +274,89 @@ http:
     maxAge: 600
 ```
 
-CORS requires a published HTTP tunnel and at least one explicit HTTP(S) origin without paths or wildcards. Each list accepts at most 128 entries; Engine limits all strings together to 16 KiB. `maxAge` is 0–86400 seconds. Omitted methods default to GET/HEAD/POST; omitted request headers default to Authorization/Content-Type. An absent policy leaves upstream CORS unchanged. Actual requests retain edge authentication; preflights cannot access the upstream.
+CORS requires a published HTTP tunnel and at least one explicit HTTP(S)
+origin without paths or wildcards. Each list accepts at most 128 entries.
+The Engine limits all strings together to 16 KiB. `maxAge` is 0–86400
+seconds. Omitted methods default to GET, HEAD, and POST. Omitted request
+headers default to Authorization and Content-Type. With no policy, the
+upstream handles CORS. The edge handles preflights and applies
+authentication to actual requests.
+
+### TLS
+
+```yaml
+protocol: tls
+tls:
+  mode: terminated
+  minVersion: tls1.3
+  alpns:
+    - h2
+  mtls: true
+```
+
+| TLS field | Purpose |
+| --- | --- |
+| `mode` | Select `terminated` or `passthrough` at the edge. |
+| `minVersion` | Minimum edge TLS version, `tls1.2` or `tls1.3`. |
+| `alpns` | Allowed application protocols. |
+| `mtls` | Enable caller mTLS at the edge. |
+
+### Agent
+
+```yaml
+agent:
+  image: rstream/rstream-operator:0.6.2
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      memory: 512Mi
+  nodeSelector:
+    kubernetes.io/os: linux
+  tolerations: []
+  podLabels:
+    team: platform
+```
+
+| Agent field | Purpose and default |
+| --- | --- |
+| `image` | Override the manager's configured default agent image. |
+| `replicas` | One agent per tunnel. The only accepted value is `1`. |
+| `resources` | Pod resources. When omitted, the agent requests 25m CPU and 64Mi memory with a 256Mi memory limit. |
+| `nodeSelector`, `tolerations`, `affinity`, `priorityClassName` | Agent scheduling settings. |
+| `podLabels`, `podAnnotations` | Agent Pod metadata. |
+
+## Status
+
+### RstreamConnection
+
+Read `status.engine` to see which Engine the manager resolved.
+
+| Field | Description |
+| --- | --- |
+| `observedGeneration` | Last connection spec generation reconciled. |
+| `conditions` | Connection configuration readiness. |
+| `apiURL` | Control plane URL used for project resolution. |
+| `projectID` | Resolved project ID when lookup is used. |
+| `projectEndpoint` | Resolved project endpoint when lookup is used. |
+| `engine` | Engine address used by tunnel agents. |
+| `region` | `auto` or the explicit region for a resolved hosted project. |
+
+### RstreamTunnel
+
+| Field | Description |
+| --- | --- |
+| `observedGeneration` | Last spec generation reconciled. |
+| `conditions` | Readiness and diagnostic conditions. |
+| `tunnelID` | rstream tunnel ID reported by the agent. |
+| `rstreamName` | Name registered in rstream. |
+| `hostname` | The Engine-confirmed hostname for a published tunnel. |
+| `forwardingAddress` | Display address reported by the agent. Published tunnels show their public address. Private tunnels can show `rstrm://<tunnel-name> (unpublished)`. The field can retain its last value during reconnect. |
+| `target` | Resolved upstream `host:port`. |
+| `agentDeployment` | Managed Deployment name. |
+| `lastError` | Latest controller or agent error. |
+
+See [status ownership](002-architecture.md#readiness-and-recovery) for
+the condition types and [troubleshooting](005-troubleshooting.md) for
+their reasons and messages.

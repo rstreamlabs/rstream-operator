@@ -1,69 +1,54 @@
-# Install and create a tunnel
+# Install the Operator
 
-Use Kubernetes 1.29 or newer, kubectl, Helm and a rstream project-scoped token. Run these commands from a checkout of this repository. For compilation without a cluster or credentials, use [Build from source](001-building-from-source.md).
+Install the published Helm chart to add the `tunnels.rstream.io/v1alpha1` API and
+run the controller. You can verify the installation before configuring any
+rstream credentials.
 
-The chart defaults to the `latest` operator image and lets the agent inherit it. For a reproducible installation, select a reviewed image tag with `--set image.tag=<reviewed-tag>` in the Helm command below. The chart version and `appVersion` are metadata, not an override of `values.yaml`.
+| Prerequisite | What you need |
+| --- | --- |
+| Kubernetes | A cluster running Kubernetes 1.29 or newer. |
+| kubectl and Helm | Both clients configured for the same cluster. |
+| Cluster permissions | Permission to install CustomResourceDefinitions, cluster RBAC, and the manager Deployment. |
+| Registry access | The Helm client needs access to `ghcr.io`. Kubernetes nodes need access to Docker Hub for the release image. |
 
-Install the operator:
+The chart installs a cluster-wide manager role. Its ServiceAccount can read
+and watch Secrets across managed namespaces. Review that access before
+installation; [the Operator architecture](002-architecture.md) describes the
+boundary between the manager and each tenant’s tunnel agent.
+
+## Install a stable release
+
+Check which cluster your clients will use, then install a matching chart and
+image from [stable releases](https://github.com/rstreamlabs/rstream-operator/releases).
 
 ```sh
-helm upgrade --install rstream-operator ./charts/rstream-operator \
+kubectl config current-context
+
+OPERATOR_VERSION=0.6.2
+helm upgrade --install rstream-operator oci://ghcr.io/rstreamlabs/rstream-operator \
+  --version "$OPERATOR_VERSION" \
   --namespace rstream-system \
-  --create-namespace
+  --create-namespace \
+  --set-string image.tag="$OPERATOR_VERSION" \
+  --wait --timeout 3m
 ```
 
-Create an application Service:
+Helm pulls the chart from GitHub Container Registry. The manager and its
+agents use `docker.io/rstream/rstream-operator:0.6.2` with these settings. The
+chart's `--version` selects only the chart, so set the image tag explicitly.
+
+## Verify the installation
 
 ```sh
-kubectl apply -f config/samples/http_server.yaml
+kubectl wait --for=condition=Established \
+  crd/rstreamconnections.tunnels.rstream.io \
+  crd/rstreamtunnels.tunnels.rstream.io --timeout=60s
+kubectl -n rstream-system rollout status deployment/rstream-operator --timeout=180s
+kubectl api-resources --api-group=tunnels.rstream.io
 ```
 
-Set `RSTREAM_TOKEN` to a token authorized for this project, then create the credential Secret:
+The manager Deployment should finish its rollout and the API resource list
+should include namespaced `rstreamconnections` and `rstreamtunnels`.
 
-```sh
-kubectl -n rstream-demo create secret generic rstream-credentials \
-  --from-literal=token="$RSTREAM_TOKEN"
-```
-
-Save the connection and tunnel below as `rstream-tunnel.yaml`:
-
-```yaml
-apiVersion: tunnels.rstream.io/v1alpha1
-kind: RstreamConnection
-metadata:
-  name: default
-  namespace: rstream-demo
-spec:
-  projectEndpoint: "my-project-endpoint"
-  tokenSecretRef:
-    name: rstream-credentials
-    key: token
----
-apiVersion: tunnels.rstream.io/v1alpha1
-kind: RstreamTunnel
-metadata:
-  name: web
-  namespace: rstream-demo
-spec:
-  target:
-    service:
-      name: http-server
-      port: http
-  publish: true
-  protocol: http
-  http:
-    version: http/1.1
-```
-
-Apply the file, then check readiness and the public address:
-
-```sh
-kubectl apply -f rstream-tunnel.yaml
-kubectl -n rstream-demo wait --for=condition=Ready rstreamtunnel/web --timeout=120s
-kubectl -n rstream-demo get rstreamtunnel web
-kubectl -n rstream-demo describe rstreamtunnel web
-```
-
-Replace `my-project-endpoint` with the project endpoint from the dashboard. The sample Service creates the `rstream-demo` namespace used by the credentials and custom resources. For an existing Service, use its namespace, name and port instead.
-
-The forwarding address appears when `Ready` is true. Copy `.status.forwardingAddress` from the resource and request it with `curl`; the sample Python HTTP server returns an HTML directory listing. A successful request checks the published data path as well as reconciliation readiness. Readiness alone does not prove a particular application response. See [Troubleshooting](005-troubleshooting.md) if resolution or agent readiness fails. [API reference](003-api-reference.md) covers self-hosted engines, certificate credentials and additional protocol settings.
+Continue with [Publish your first Service](001-first-tunnel.md). For chart
+overrides and release upgrades, see the [installation reference](004-installation-reference.md).

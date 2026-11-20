@@ -1418,8 +1418,9 @@ spec:
                 - type
                 x-kubernetes-list-type: map
               forwardingAddress:
-                description: ForwardingAddress is the public address returned by rstream
-                  for published tunnels.
+                description: |-
+                  ForwardingAddress is the public address for published tunnels or the
+                  rstrm:// display address for private tunnels.
                 type: string
               hostname:
                 description: Hostname is the hostname confirmed by the Engine for
