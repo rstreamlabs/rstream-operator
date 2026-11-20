@@ -1,21 +1,16 @@
 # Publish your first Service
 
-The sample exposes a demo HTTP server through rstream. Use an empty
+The sample publishes a demo HTTP server through rstream. Create a dedicated
 `rstream-demo` namespace for the exercise. A published endpoint is
 reachable from outside the cluster, so use the sample's disposable content.
 
 ## 1. Start the sample Service
 
 After [installing the Operator](000-getting-started.md), save this manifest as
-`http-server.yaml`. It creates the demo namespace, Deployment, and Service.
-The server exposes only the fixed test response.
+`http-server.yaml`. It creates a Deployment and Service in the
+demo namespace. The server exposes only the fixed test response.
 
 ```yaml
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: rstream-demo
----
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -61,9 +56,13 @@ spec:
 ```
 
 ```sh
+kubectl create namespace rstream-demo
 kubectl apply -f http-server.yaml
 kubectl -n rstream-demo rollout status deployment/http-server
 ```
+
+If the namespace already exists, choose a new name and use it consistently in
+the manifests and commands below.
 
 ## 2. Configure the connection
 
@@ -172,3 +171,5 @@ session can close. Leave the manager running during tunnel deletion.
 kubectl -n rstream-demo delete rstreamtunnel web
 kubectl delete namespace rstream-demo
 ```
+
+Remove the local test token file when you no longer need it.
