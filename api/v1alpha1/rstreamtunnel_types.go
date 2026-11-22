@@ -224,7 +224,8 @@ type RstreamTunnelStatus struct {
 	// Hostname is the hostname confirmed by the Engine for the published tunnel.
 	// +optional
 	Hostname string `json:"hostname,omitempty"`
-	// ForwardingAddress is the public address returned by rstream for published tunnels.
+	// ForwardingAddress is the public address for published tunnels or the
+	// rstrm:// display address for private tunnels.
 	// +optional
 	ForwardingAddress string `json:"forwardingAddress,omitempty"`
 	// Target is the resolved upstream host:port dialed by the agent.
