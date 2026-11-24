@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.6.3](https://github.com/rstreamlabs/rstream-operator/compare/v0.6.2...v0.6.3) (2026-11-24)
+
+
+### Bug Fixes
+
+* build the operator with the Go HTTP security patch ([322eefe](https://github.com/rstreamlabs/rstream-operator/commit/322eefeb471576345bc84d60753c3960b478c42a))
+* propagate DTLS v3.1.15 to the operator ([84c8f5d](https://github.com/rstreamlabs/rstream-operator/commit/84c8f5d52b54ecedead809ecff6129db4f7684d3))
+
 ## [0.6.2](https://github.com/rstreamlabs/rstream-operator/compare/v0.6.1...v0.6.2) (2026-11-06)
 
 
