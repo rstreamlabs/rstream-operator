@@ -6,8 +6,18 @@ reachable from outside the cluster, so use the sample's disposable content.
 
 ## 1. Start the sample Service
 
-After [installing the Operator](000-getting-started.md), save this manifest as
-`http-server.yaml`. It creates a Deployment and Service in the
+After [installing the Operator](000-getting-started.md), create a namespace for
+this exercise.
+
+```sh
+kubectl create namespace rstream-demo
+```
+
+Continue when Kubernetes reports `namespace/rstream-demo created`. If it
+reports `AlreadyExists`, choose an unused name, repeat the create command
+with that name, and use it in each namespace field and command below.
+
+Save this manifest as `http-server.yaml`. It creates a Deployment and Service in the
 demo namespace. The server exposes only the fixed test response.
 
 ```yaml
@@ -55,14 +65,12 @@ spec:
       targetPort: 8080
 ```
 
+Apply the manifest and wait for the server to start.
+
 ```sh
-kubectl create namespace rstream-demo
 kubectl apply -f http-server.yaml
 kubectl -n rstream-demo rollout status deployment/http-server
 ```
-
-If the namespace already exists, choose a new name and use it consistently in
-the manifests and commands below.
 
 ## 2. Configure the connection
 
@@ -169,6 +177,12 @@ session can close. Leave the manager running during tunnel deletion.
 
 ```sh
 kubectl -n rstream-demo delete rstreamtunnel web
+```
+
+Once the deletion finishes, remove the namespace you created in step 1.
+This also removes the sample Service, Deployment, connection and Secret.
+
+```sh
 kubectl delete namespace rstream-demo
 ```
 

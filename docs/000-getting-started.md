@@ -18,12 +18,16 @@ boundary between the manager and each tenant’s tunnel agent.
 
 ## Install a stable release
 
-Check which cluster your clients will use, then install a matching chart and
-image from [stable releases](https://github.com/rstreamlabs/rstream-operator/releases).
+Check which cluster your clients will use.
 
 ```sh
 kubectl config current-context
+```
 
+Once the context names the intended cluster, install a matching chart and
+image from [stable releases](https://github.com/rstreamlabs/rstream-operator/releases).
+
+```sh
 OPERATOR_VERSION=0.6.2
 helm upgrade --install rstream-operator oci://ghcr.io/rstreamlabs/rstream-operator \
   --version "$OPERATOR_VERSION" \
